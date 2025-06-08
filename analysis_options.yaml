@@ -1,0 +1,10 @@
+include: package:flutter_lints/flutter.yaml
+
+formatter:
+  trailing_commas: preserve
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+  errors:
+    invalid_use_of_protected_member: ignore

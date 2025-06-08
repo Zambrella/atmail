@@ -1,0 +1,11 @@
+[
+  {
+    "label": "Run macos",
+    "command": "fvm flutter run",
+    "args": [
+      "-d",
+      "macos"
+    ],
+    "hide": "on_success"
+  }
+]
