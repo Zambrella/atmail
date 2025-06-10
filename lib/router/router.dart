@@ -52,6 +52,7 @@ extension GoRouterExtension on GoRouter {
   }
 }
 
+// Use a shell route to inject providers => https://pub.dev/documentation/go_router_builder/latest/
 @TypedGoRoute<HomeRoute>(
   path: '/',
   name: 'home',
@@ -60,7 +61,9 @@ class HomeRoute extends GoRouteData with _$HomeRoute {
   const HomeRoute();
 
   @override
-  Widget build(BuildContext context, GoRouterState state) => const HomeScreen();
+  Widget build(BuildContext context, GoRouterState state) {
+    return const HomeScreen();
+  }
 }
 
 @TypedGoRoute<OnboardingRoute>(
