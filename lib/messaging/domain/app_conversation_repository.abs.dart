@@ -5,14 +5,14 @@ abstract interface class AppConversationRepository {
   /// Start a one-to-one conversation with another atsign.
   Future<AppConversation> startConversation({
     required String withAtSign,
-    required AppMessage initialMessage,
+    required String initialMessage,
     Map<String, dynamic>? metadata,
   });
 
   /// Start a group conversation with a list of atsigns.
   Future<AppConversation> startGroupConversation({
     required List<String> withAtSigns,
-    required AppMessage initialMessage,
+    required String initialMessage,
     String? groupName,
     Map<String, dynamic>? metadata,
   });
@@ -30,7 +30,7 @@ abstract interface class AppConversationRepository {
   /// When the message is sent, the list of conversations is updated.
   Future<AppMessage> sendMessage({
     required String conversationId,
-    required AppMessage message,
+    required String textMessage,
   });
 
   /// Delete a message from a conversation.

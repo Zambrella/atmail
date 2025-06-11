@@ -1,5 +1,5 @@
-import 'package:atmail/messaging/domain/conversation.dart';
-import 'package:atmail/messaging/domain/conversation_repository.abs.dart';
+import 'package:atmail/messaging/domain/app_conversation.dart';
+import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,7 +13,7 @@ class ConversationState extends Equatable {
   });
 
   final ConversationStatus status;
-  final List<Conversation> conversations;
+  final List<AppConversation> conversations;
   final Exception? exception;
 
   @override
@@ -21,7 +21,7 @@ class ConversationState extends Equatable {
 
   ConversationState copyWith({
     ConversationStatus? status,
-    List<Conversation>? conversations,
+    List<AppConversation>? conversations,
     Exception? exception,
   }) {
     return ConversationState(
@@ -35,7 +35,6 @@ class ConversationState extends Equatable {
 class ConversationCubit extends Cubit<ConversationState> {
   ConversationCubit(this._conversationRepository)
     : super(ConversationState(status: ConversationStatus.loading, conversations: [])) {
-    // TODO: This also needs to pull in the messages as well.
     _conversationRepository.getConversations().listen(
       (conversations) {
         emit(state.copyWith(status: ConversationStatus.success, conversations: conversations));
@@ -46,5 +45,5 @@ class ConversationCubit extends Cubit<ConversationState> {
     );
   }
 
-  final ConversationRepository _conversationRepository;
+  final AppConversationRepository _conversationRepository;
 }

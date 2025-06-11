@@ -1,12 +1,10 @@
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:atmail/app.dart';
 import 'package:atmail/messaging/blocs/conversation_bloc.dart';
-import 'package:atmail/messaging/domain/conversation_repository.abs.dart';
-import 'package:atmail/messaging/domain/message_repository.abs.dart';
+import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
+import 'package:atmail/messaging/repository/app_conversation_repository.impl.dart';
 import 'package:atmail/messaging/presentation/conversation_list.dart';
 import 'package:atmail/messaging/presentation/new_message_dialog.dart';
-import 'package:atmail/messaging/repository/conversation_repository.impl.dart';
-import 'package:atmail/messaging/repository/message_repository.impl.dart';
 import 'package:atmail/router/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -19,14 +17,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<ConversationRepository>(
-          create: (context) => ConversationRepositoryImpl(
-            atClient: AtClientManager.getInstance().atClient,
-            namespace: 'atmail',
-          ),
-        ),
-        RepositoryProvider<MessageRepository>(
-          create: (context) => MessageRepositoryImpl(
+        RepositoryProvider<AppConversationRepository>(
+          create: (context) => AppConversationRepositoryImpl(
             atClient: AtClientManager.getInstance().atClient,
             namespace: 'atmail',
           ),
@@ -34,7 +26,7 @@ class HomeScreen extends StatelessWidget {
       ],
       child: BlocProvider(
         create: (context) => ConversationCubit(
-          context.read<ConversationRepository>(),
+          context.read<AppConversationRepository>(),
         ),
         child: Builder(
           builder: (context) {
@@ -70,7 +62,7 @@ class HomeScreen extends StatelessWidget {
                     context: context,
                     builder: (dialogContext) {
                       return RepositoryProvider.value(
-                        value: context.read<ConversationRepository>(),
+                        value: context.read<AppConversationRepository>(),
                         child: NewMessageDialog(),
                       );
                     },

@@ -37,6 +37,7 @@ class _ConversationListState extends State<ConversationList> {
               final conversation = conversations[index];
               return ListTile(
                 title: Text(conversation.participants.join(', ')),
+                subtitle: Text(conversation.latestMessage ?? 'No message'),
               );
             },
           );

@@ -1,5 +1,4 @@
-import 'package:atmail/messaging/domain/conversation_repository.abs.dart';
-import 'package:atmail/messaging/domain/message_repository.abs.dart';
+import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -29,7 +28,10 @@ class NewMessageDialogState extends State<NewMessageDialog> {
       final recipient = _recipientController.text.trim();
       final message = _messageController.text.trim();
 
-      final conversation = await context.read<ConversationRepository>().startConversation(withAtSign: recipient);
+      final conversation = await context.read<AppConversationRepository>().startConversation(
+        withAtSign: recipient,
+        initialMessage: message,
+      );
       print('Conversation started : $conversation');
 
       if (mounted) {
