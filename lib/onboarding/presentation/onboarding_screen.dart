@@ -30,7 +30,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               if (context.mounted) {
                 switch (onboardingResult.status) {
                   case AtOnboardingResultStatus.success:
-                    HomeRoute().go(context);
+                    ConversationsRoute().go(context);
                   case AtOnboardingResultStatus.error:
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(backgroundColor: Colors.red, content: Text('An error has occurred')),

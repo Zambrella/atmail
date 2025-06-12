@@ -1,4 +1,5 @@
 import 'package:atmail/messaging/blocs/conversation_bloc.dart';
+import 'package:atmail/router/router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -38,6 +39,9 @@ class _ConversationListState extends State<ConversationList> {
               return ListTile(
                 title: Text(conversation.participants.join(', ')),
                 subtitle: Text(conversation.latestMessage ?? 'No message'),
+                onTap: () {
+                  ConversationDetailsRoute(conversation.id).push(context);
+                },
               );
             },
           );

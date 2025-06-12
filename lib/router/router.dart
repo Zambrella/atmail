@@ -1,7 +1,11 @@
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
-import 'package:atmail/home_screen.dart';
+import 'package:atmail/contacts/presentation/contacts_list_page.dart';
+import 'package:atmail/messaging/presentation/conversation_list_page.dart';
+import 'package:atmail/messaging/presentation/conversation_details_page.dart';
 import 'package:atmail/onboarding/presentation/onboarding_screen.dart';
 import 'package:atmail/router/error_screen.dart';
+import 'package:atmail/router/home_shell_route.dart';
+import 'package:atmail/settings/presentation/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:logging/logging.dart';
@@ -9,12 +13,13 @@ import 'package:logging/logging.dart';
 part 'router.g.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
+final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavigator');
 
 final logger = Logger('Router');
 
 GoRouter goRouter() {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/mail',
     navigatorKey: _rootNavigatorKey,
     debugLogDiagnostics: true,
     redirect: (context, state) {
@@ -52,17 +57,74 @@ extension GoRouterExtension on GoRouter {
   }
 }
 
-// Use a shell route to inject providers => https://pub.dev/documentation/go_router_builder/latest/
-@TypedGoRoute<HomeRoute>(
-  path: '/',
-  name: 'home',
+@TypedShellRoute<HomeShellRouteData>(
+  routes: [
+    TypedGoRoute<ConversationsRoute>(
+      path: '/mail',
+      name: 'mail',
+      routes: [
+        TypedGoRoute<ConversationDetailsRoute>(
+          path: ':conversationId',
+          name: 'conversationDetails',
+        ),
+      ],
+    ),
+    TypedGoRoute<ContactsListRoute>(
+      path: '/contacts',
+      name: 'contactsList',
+    ),
+    TypedGoRoute<SettingsRoute>(
+      path: '/settings',
+      name: 'settings',
+    ),
+  ],
 )
-class HomeRoute extends GoRouteData with _$HomeRoute {
-  const HomeRoute();
+class HomeShellRouteData extends ShellRouteData {
+  const HomeShellRouteData();
+
+  static final GlobalKey<NavigatorState> $navigatorKey = _homeNavigatorKey;
+
+  @override
+  Widget builder(BuildContext context, GoRouterState state, Widget navigator) {
+    return HomeShellRoute(child: navigator);
+  }
+}
+
+class ConversationsRoute extends GoRouteData with _$ConversationsRoute {
+  const ConversationsRoute();
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return const HomeScreen();
+    return const ConversationsPage();
+  }
+}
+
+class ConversationDetailsRoute extends GoRouteData with _$ConversationDetailsRoute {
+  const ConversationDetailsRoute(this.conversationId);
+
+  final String conversationId;
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return ConversationDetailsPage(conversationId: conversationId);
+  }
+}
+
+class ContactsListRoute extends GoRouteData with _$ContactsListRoute {
+  const ContactsListRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return ContactsListPage();
+  }
+}
+
+class SettingsRoute extends GoRouteData with _$SettingsRoute {
+  const SettingsRoute();
+
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return SettingsPage();
   }
 }
 
