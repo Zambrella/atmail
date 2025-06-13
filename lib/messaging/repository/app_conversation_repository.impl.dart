@@ -109,7 +109,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       final conversation = current[index];
       final updatedMessages = List<AppMessage>.from(conversation.messages);
 
-      // Check if message already exists (prevent duplicates)
+      // Check if message already exists
       final existingIndex = updatedMessages.indexWhere(
         (m) => m.timestamp == message.timestamp && m.sender == message.sender,
       );
@@ -158,6 +158,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       text: message.text,
       type: message.type,
       sender: message.from,
+      // _convertToAppMessage is only called when fetching messages from the server and for them to exist they must be
+      // sent and delivered.
+      status: MessageStatusDelivered(),
       metadata: message.metadata,
     );
   }
@@ -526,6 +529,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         timestamp: now,
         text: initialMessage,
         type: MessageType.plainText,
+        status: MessageStatusPending(),
         sender: atClient.getCurrentAtSign()!,
       );
 
@@ -611,6 +615,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         timestamp: now,
         text: initialMessage,
         type: MessageType.plainText,
+        status: MessageStatusPending(),
         sender: atClient.getCurrentAtSign()!,
       );
 
@@ -727,6 +732,14 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     required String conversationId,
     required String textMessage,
   }) async {
+    final message = AppMessage(
+      timestamp: DateTime.now(),
+      text: textMessage,
+      type: MessageType.plainText,
+      status: MessageStatusPending(),
+      sender: atClient.getCurrentAtSign()!,
+    );
+
     try {
       logger.fine('Sending message to conversation: $conversationId');
 
@@ -735,12 +748,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         throw Exception('Conversation not found');
       }
 
-      final message = AppMessage(
-        timestamp: DateTime.now(),
-        text: textMessage,
-        type: MessageType.plainText,
-        sender: atClient.getCurrentAtSign()!,
-      );
+      _addMessageToConversation(conversationId, message);
 
       // Create message key with timestamp for uniqueness
       String messageKey = '$kMsgPrefix.$conversationId.${message.timestamp.millisecondsSinceEpoch}';
@@ -762,21 +770,30 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
           bool stored = await atClient.put(msgKey, jsonEncode(storageMessage.toMap()));
 
+          _addMessageToConversation(conversationId, message.copyWith(status: MessageStatusSent()));
+
           if (stored) {
             // Send notification
             await atClient.notificationService.notify(
               NotificationParams.forUpdate(msgKey, value: jsonEncode(storageMessage.toMap())),
             );
+            _addMessageToConversation(conversationId, message.copyWith(status: MessageStatusDelivered()));
             logger.info('Message sent to $participant');
           }
         }
       }
 
-      // Add to local state
-      _addMessageToConversation(conversationId, message);
-
       return message;
     } catch (e, st) {
+      _addMessageToConversation(
+        conversationId,
+        message.copyWith(
+          status: MessageStatusError(
+            'Failed to send message: $message',
+            e is Exception ? e : Exception(e.toString()),
+          ),
+        ),
+      );
       logger.severe('Error sending message', e, st);
       throw Exception('Error sending message: $e');
     }

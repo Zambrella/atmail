@@ -12,40 +12,49 @@ import 'package:logging/logging.dart';
 
 part 'router.g.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
-final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'homeNavigator');
+// Use singleton pattern to avoid hot reload issues
+class _NavigatorKeys {
+  static GlobalKey<NavigatorState>? _rootKey;
+  static GlobalKey<NavigatorState>? _homeKey;
+
+  static GlobalKey<NavigatorState> get rootNavigatorKey {
+    return _rootKey ??= GlobalKey<NavigatorState>(debugLabel: 'rootNavigator');
+  }
+
+  static GlobalKey<NavigatorState> get homeNavigatorKey {
+    return _homeKey ??= GlobalKey<NavigatorState>(debugLabel: 'homeNavigator');
+  }
+}
 
 final logger = Logger('Router');
 
-GoRouter goRouter() {
-  return GoRouter(
-    initialLocation: '/mail',
-    navigatorKey: _rootNavigatorKey,
-    debugLogDiagnostics: true,
-    redirect: (context, state) {
-      try {
-        final atClient = AtClientManager.getInstance().atClient;
+final router = GoRouter(
+  initialLocation: '/mail',
+  navigatorKey: _NavigatorKeys.rootNavigatorKey,
+  debugLogDiagnostics: true,
+  redirect: (context, state) {
+    try {
+      final atClient = AtClientManager.getInstance().atClient;
 
-        if (atClient.getCurrentAtSign() == null) {
-          return OnboardingRoute().location;
-        }
-      } catch (e, st) {
-        if (e.toString() == 'Null check operator used on a null value') {
-          return OnboardingRoute().location;
-        }
-        logger.severe('Error getting current atsign', e, st);
-
-        rethrow;
+      if (atClient.getCurrentAtSign() == null) {
+        return OnboardingRoute().location;
       }
+    } catch (e, st) {
+      if (e.toString() == 'Null check operator used on a null value') {
+        return OnboardingRoute().location;
+      }
+      logger.severe('Error getting current atsign', e, st);
 
-      return null;
-    },
-    routes: $appRoutes,
-    errorBuilder: (BuildContext context, GoRouterState state) {
-      return ErrorRoute(error: state.error!).build(context, state);
-    },
-  );
-}
+      rethrow;
+    }
+
+    return null;
+  },
+  routes: $appRoutes,
+  errorBuilder: (BuildContext context, GoRouterState state) {
+    return ErrorRoute(error: state.error!).build(context, state);
+  },
+);
 
 extension GoRouterExtension on GoRouter {
   // Clear the stack and navigate to a new location
@@ -82,7 +91,7 @@ extension GoRouterExtension on GoRouter {
 class HomeShellRouteData extends ShellRouteData {
   const HomeShellRouteData();
 
-  static final GlobalKey<NavigatorState> $navigatorKey = _homeNavigatorKey;
+  static GlobalKey<NavigatorState> get $navigatorKey => _NavigatorKeys.homeNavigatorKey;
 
   @override
   Widget builder(BuildContext context, GoRouterState state, Widget navigator) {

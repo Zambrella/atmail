@@ -21,7 +21,7 @@ class AppState extends State<App> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'AtMail',
-      routerConfig: goRouter(),
+      routerConfig: router,
       builder: (_, child) {
         // Wrap with inherited widgets if needed.
         return AppStartupWidget(

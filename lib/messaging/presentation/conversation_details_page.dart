@@ -1,5 +1,7 @@
 import 'package:atmail/messaging/blocs/conversation_details_cubit.dart';
+import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
+import 'package:atmail/messaging/presentation/loaded_conversation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,22 +35,12 @@ class ConversationDetailsPageState extends State<ConversationDetailsPage> {
                   );
                 case ConversationDetailsStatus.success when state.conversation != null:
                   final conversation = state.conversation!;
-                  return Scaffold(
-                    appBar: AppBar(
-                      title: Text(
-                        conversation.participants.join(', '),
-                      ),
+                  return BlocProvider(
+                    create: (context) => NewMessageCubit(
+                      context.read<AppConversationRepository>(),
+                      conversationId: conversation.id,
                     ),
-                    body: ListView.builder(
-                      itemCount: conversation.messages.length,
-                      itemBuilder: (context, index) {
-                        final message = conversation.messages[index];
-                        return ListTile(
-                          title: Text(message.text),
-                          subtitle: Text(message.sender),
-                        );
-                      },
-                    ),
+                    child: LoadedConversation(conversation: conversation),
                   );
                 case _:
                   return Scaffold(
