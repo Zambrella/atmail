@@ -1,9 +1,11 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation.dart';
 import 'package:atmail/messaging/presentation/message_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class LoadedConversation extends StatefulWidget {
   const LoadedConversation({required this.conversation, super.key});
@@ -50,75 +52,100 @@ class LoadedConversationState extends State<LoadedConversation> {
     }
   }
 
+  void _deleteConversation() {
+    // TODO: Show confirmation dialog.
+    context.read<DeleteConversationCubit>().deleteConversation(conversation.id);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          conversation.participants.join(', '),
-        ),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: conversation.messages.length,
-              itemBuilder: (context, index) {
-                final message = conversation.messages[index];
-                return MessageCard(
-                  message: message,
-                  isSender: AtClientManager.getInstance().atClient.getCurrentAtSign() == message.sender,
-                );
-              },
-            ),
+    return BlocListener<DeleteConversationCubit, DeleteConversationState>(
+      listener: (context, state) {
+        switch (state) {
+          case DeleteConversationInitial():
+            break;
+          case DeleteConversationLoading():
+            break;
+          case DeleteConversationSuccess():
+            context.pop();
+          case DeleteConversationFailure(:final message):
+            print(message);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            conversation.participants.join(', '),
           ),
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor,
-                  width: 1.0,
+          actions: [
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: _deleteConversation,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: conversation.messages.length,
+                itemBuilder: (context, index) {
+                  final message = conversation.messages[index];
+                  return MessageCard(
+                    message: message,
+                    isSender: AtClientManager.getInstance().atClient.getCurrentAtSign() == message.sender,
+                  );
+                },
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).dividerColor,
+                    width: 1.0,
+                  ),
+                ),
+              ),
+              child: Form(
+                key: _formKey,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _messageController,
+                        maxLines: null,
+                        minLines: 1,
+                        textInputAction: TextInputAction.newline,
+                        decoration: const InputDecoration(
+                          hintText: 'Type your message...',
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter a message';
+                          }
+                          if (value.trim().length > 1000) {
+                            return 'Message is too long (max 1000 characters)';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8.0),
+                    IconButton(
+                      onPressed: _submitMessage,
+                      icon: const Icon(Icons.send),
+                      tooltip: 'Send message',
+                    ),
+                  ],
                 ),
               ),
             ),
-            child: Form(
-              key: _formKey,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _messageController,
-                      maxLines: null,
-                      minLines: 1,
-                      textInputAction: TextInputAction.newline,
-                      decoration: const InputDecoration(
-                        hintText: 'Type your message...',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter a message';
-                        }
-                        if (value.trim().length > 1000) {
-                          return 'Message is too long (max 1000 characters)';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8.0),
-                  IconButton(
-                    onPressed: _submitMessage,
-                    icon: const Icon(Icons.send),
-                    tooltip: 'Send message',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

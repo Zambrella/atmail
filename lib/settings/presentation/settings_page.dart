@@ -1,3 +1,4 @@
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -12,6 +13,13 @@ class SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Settings'),
+      ),
+      body: Column(
+        children: [
+          Text(
+            'You are: ${AtClientManager.getInstance().atClient.getCurrentAtSign()}',
+          ),
+        ],
       ),
     );
   }

@@ -18,6 +18,7 @@ class AppConversation with AppConversationMappable implements Comparable<AppConv
   final String id;
 
   /// The atsign participants of the conversation.
+  /// The atsigns should be formatted as '@username'.
   final List<String> participants;
 
   /// The date and time when the conversation was created.

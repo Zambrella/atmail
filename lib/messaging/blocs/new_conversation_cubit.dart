@@ -1,3 +1,4 @@
+import 'package:at_utils/at_utils.dart';
 import 'package:atmail/messaging/domain/app_conversation.dart';
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,12 +37,12 @@ class NewConversationCubit extends Cubit<NewConversationState> {
       late final AppConversation conversation;
       if (recipients.length == 1) {
         conversation = await _conversationRepository.startConversation(
-          withAtSign: recipients.first,
+          withAtSign: AtUtils.fixAtSign(recipients.first),
           initialMessage: message,
         );
       } else {
         conversation = await _conversationRepository.startGroupConversation(
-          withAtSigns: recipients,
+          withAtSigns: recipients.map(AtUtils.fixAtSign).toList(),
           initialMessage: message,
         );
       }

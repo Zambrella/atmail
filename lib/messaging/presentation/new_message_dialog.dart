@@ -80,6 +80,7 @@ class NewMessageDialogState extends State<NewMessageDialog> {
                 // Delay to show the success message/icon.
                 await Future.delayed(const Duration(seconds: 2));
                 if (context.mounted) {
+                  Navigator.pop(context);
                   ConversationDetailsRoute(state.newConversation.id).go(context);
                 }
               }

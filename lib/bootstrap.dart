@@ -19,7 +19,7 @@ Future<void> bootstrap(WidgetsBinding widgetsBinding) async {
   // Set the logger level here.
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
-    print('${record.level.name} | ${record.loggerName}: ${record.time}: ${record.message}');
+    print('${record.level.name} | ${record.loggerName}: ${record.message}');
   });
 
   logger.fine('Starting bootstrap');

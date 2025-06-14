@@ -46,8 +46,8 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     // Initial load of conversations
     _loadAllConversations();
 
-    // Periodic refresh to catch any missed conversations (every 30 seconds)
-    _periodicRefresh = Timer.periodic(Duration(seconds: 30), (_) {
+    // Periodic refresh to catch any missed conversations
+    _periodicRefresh = Timer.periodic(const Duration(seconds: 30), (_) {
       _refreshConversations();
     });
   }
@@ -78,8 +78,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   AppConversation? _getConversation(String id) => _conversations.value.firstWhereOrNull((c) => c.id == id);
 
   bool _hasConversation(String id) => _conversations.value.any((c) => c.id == id);
-
-  // List<String> _getConversationIds() => _conversations.value.map((c) => c.id).toList();
 
   void _addOrUpdateConversation(AppConversation conversation) {
     final current = List<AppConversation>.from(_conversations.value);
@@ -181,9 +179,17 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     try {
       if (notification.key.contains(kConvPrefix)) {
         String? conversationId = _extractConversationId(notification.key);
-        if (conversationId != null) {
-          logger.info('Received conversation notification for conversation ID: $conversationId');
-          await _loadConversation(conversationId);
+        if (conversationId != null && notification.value != null) {
+          // Notification value needs to be used as the data might not be in the server yet.
+          final conversation = ConversationMapper.fromJson(notification.value!);
+          List<AppMessage> messages = await _loadConversationMessages(conversationId);
+          AppConversation appConversation = _convertToAppConversation(conversation, messages);
+          _addOrUpdateConversation(appConversation);
+        } else if (conversationId != null && notification.operation == 'delete') {
+          await _removeFromConversationIndex(conversationId);
+          _removeConversation(conversationId);
+        } else {
+          logger.warning('Invalid conversation notification: $notification');
         }
       }
     } catch (e, st) {
@@ -195,9 +201,20 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     try {
       if (notification.key.contains(kMsgPrefix)) {
         String? conversationId = _extractConversationIdFromMessageKey(notification.key);
-        if (conversationId != null) {
-          logger.info('Received message notification for conversation: $conversationId');
-          await _loadMessage(notification.key, notification.from, conversationId);
+        if (conversationId != null && notification.value != null) {
+          Message message = MessageMapper.fromJson(notification.value!);
+          AppMessage appMessage = _convertToAppMessage(message);
+          _addMessageToConversation(conversationId, appMessage);
+        } else if (conversationId != null && notification.operation == 'delete') {
+          // What if the conversation is deleted before the messages?
+          final conversation = _getConversation(conversationId);
+          final messageId = _extractMessageIdFromMessageKey(notification.key);
+          final updatedMessages = List<AppMessage>.from(conversation!.messages)
+            ..removeWhere((m) => m.timestamp.millisecondsSinceEpoch.toString() == messageId);
+          final updatedConversation = conversation.copyWith(messages: updatedMessages);
+          _addOrUpdateConversation(updatedConversation);
+        } else {
+          logger.warning('Invalid message notification: $notification');
         }
       }
     } catch (e, st) {
@@ -225,6 +242,18 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       }
     } catch (e, st) {
       logger.severe('Error extracting conversation ID from message key: $key', e, st);
+    }
+    return null;
+  }
+
+  String? _extractMessageIdFromMessageKey(String key) {
+    try {
+      final parts = key.split('.');
+      if (parts.length >= 3 && parts[0].contains(kMsgPrefix)) {
+        return parts[2]; // message ID is the third part
+      }
+    } catch (e, st) {
+      logger.severe('Error extracting messageID from message key: $key', e, st);
     }
     return null;
   }
@@ -510,7 +539,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         await atClient.put(indexKey, jsonEncode(conversationIds));
       }
     } catch (e, st) {
-      logger.severe('Error removing from conversation index', e, st);
+      logger.warning('Error removing from conversation index', e, st);
     }
   }
 
@@ -525,13 +554,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
       String conversationId = Uuid().v4();
       DateTime now = DateTime.now();
-      final message = AppMessage(
-        timestamp: now,
-        text: initialMessage,
-        type: MessageType.plainText,
-        status: MessageStatusPending(),
-        sender: atClient.getCurrentAtSign()!,
-      );
 
       // Create conversation
       AppConversation appConversation = AppConversation(
@@ -539,7 +561,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         participants: [atClient.getCurrentAtSign()!, withAtSign],
         createdAt: now,
         createdBy: atClient.getCurrentAtSign()!,
-        messages: [message],
+        messages: [],
         metadata: metadata ?? {},
       );
 
@@ -611,20 +633,12 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         convMetadata['groupName'] = groupName;
       }
 
-      final message = AppMessage(
-        timestamp: now,
-        text: initialMessage,
-        type: MessageType.plainText,
-        status: MessageStatusPending(),
-        sender: atClient.getCurrentAtSign()!,
-      );
-
       AppConversation appConversation = AppConversation(
         id: conversationId,
         participants: allParticipants,
         createdAt: now,
         createdBy: atClient.getCurrentAtSign()!,
-        messages: [message],
+        messages: [],
         metadata: convMetadata,
       );
 
@@ -700,18 +714,37 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             ..sharedWith = participant
             ..sharedBy = atClient.getCurrentAtSign();
 
-          await atClient.delete(convKey);
+          final success = await atClient.delete(convKey);
+          if (success) {
+            logger.info('Successfully deleted conversation key: $convKey');
+          } else {
+            logger.warning('Failed to delete conversation key: $convKey');
+          }
+
+          await atClient.notificationService.notify(
+            NotificationParams.forDelete(convKey),
+          );
 
           // Also delete all messages
           final regex = RegExp(
-            '^@[^:]+:$kMsgPrefix\\.$conversationId\\..*\\.$namespace@${atClient.getCurrentAtSign()}\$',
+            '$kMsgPrefix\\.$conversationId',
           );
           List<AtKey> messageKeys = await atClient.getAtKeys(
             regex: regex.pattern,
           );
 
+          logger.fine('Message keys for deletion: $messageKeys');
+
           for (AtKey msgKey in messageKeys) {
-            await atClient.delete(msgKey);
+            final success = await atClient.delete(msgKey);
+            if (success) {
+              logger.fine('Successfully deleted message key: $msgKey');
+            } else {
+              logger.warning('Failed to delete message key: $msgKey');
+            }
+            await atClient.notificationService.notify(
+              NotificationParams.forDelete(msgKey),
+            );
           }
         }
       }
@@ -841,12 +874,15 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             ..sharedWith = participant
             ..sharedBy = atClient.getCurrentAtSign();
 
-          try {
-            await atClient.delete(msgKey);
-            logger.fine('Message deleted for participant: $participant');
-          } catch (e) {
-            logger.severe('Failed to delete message for participant: $participant', e);
+          final success = await atClient.delete(msgKey);
+          if (success) {
+            logger.fine('Successfully deleted message key: $msgKey');
+          } else {
+            logger.warning('Failed to delete message key: $msgKey');
           }
+          await atClient.notificationService.notify(
+            NotificationParams.forDelete(msgKey),
+          );
         }
       }
 

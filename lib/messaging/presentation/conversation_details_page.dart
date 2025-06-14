@@ -1,4 +1,5 @@
 import 'package:atmail/messaging/blocs/conversation_details_cubit.dart';
+import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:atmail/messaging/presentation/loaded_conversation.dart';
@@ -35,11 +36,20 @@ class ConversationDetailsPageState extends State<ConversationDetailsPage> {
                   );
                 case ConversationDetailsStatus.success when state.conversation != null:
                   final conversation = state.conversation!;
-                  return BlocProvider(
-                    create: (context) => NewMessageCubit(
-                      context.read<AppConversationRepository>(),
-                      conversationId: conversation.id,
-                    ),
+                  return MultiBlocProvider(
+                    providers: [
+                      BlocProvider(
+                        create: (context) => NewMessageCubit(
+                          context.read<AppConversationRepository>(),
+                          conversationId: conversation.id,
+                        ),
+                      ),
+                      BlocProvider(
+                        create: (context) => DeleteConversationCubit(
+                          context.read<AppConversationRepository>(),
+                        ),
+                      ),
+                    ],
                     child: LoadedConversation(conversation: conversation),
                   );
                 case _:
