@@ -14,6 +14,7 @@ class AppConversation with AppConversationMappable implements Comparable<AppConv
     required this.createdBy,
     required this.messages,
     this.previousConversationId,
+    this.isArchived = false,
     this.metadata = const {},
   });
 
@@ -40,6 +41,9 @@ class AppConversation with AppConversationMappable implements Comparable<AppConv
   /// The id of a previous conversation.
   /// Null if this is the first conversation.
   final String? previousConversationId;
+
+  /// Whether the conversation is archived.
+  final bool isArchived;
 
   /// Additional metadata associated with the conversation.
   /// TODO: Update with examples.

@@ -27,7 +27,7 @@ abstract interface class AppConversationRepository {
   /// When a new message is sent or received, the list of conversations is updated.
   Stream<List<AppConversation>> getConversations();
 
-  // TODO:
+  /// Gets a list of all archived conversations the user is part of.
   Future<List<AppConversation>> getArchivedConversations();
 
   /// Leave a conversation and receive no further updates.
@@ -36,7 +36,11 @@ abstract interface class AppConversationRepository {
   Future<void> leaveConversation(String conversationId);
 
   /// Marks the conversation as archived and won't be returned in the list of conversations by default.
+  /// This acts as a way to hide conversations from the user's view and not receive updates.
   Future<void> archiveConversation(String conversationId);
+
+  /// Marks the conversation as unarchived and will be returned in the list of conversations by default.
+  Future<void> unarchiveConversation(String conversationId);
 
   /// Delete all reference to the conversation and messages that are stored on the atserver.
   /// Will also mark the conversation as left.

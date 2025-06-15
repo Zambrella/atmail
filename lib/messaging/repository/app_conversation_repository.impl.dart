@@ -28,6 +28,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
   // Key prefixes
   static const String kConvPrefix = 'conv';
+  static const String kConvArchivedPrefix = 'conv_archived';
   static const String kConvIndexPrefix = 'conv_index';
   static const String kMsgPrefix = 'msg';
 
