@@ -22,6 +22,9 @@ class ConversationMapper extends ClassMapperBase<Conversation> {
 
   static String _$id(Conversation v) => v.id;
   static const Field<Conversation, String> _f$id = Field('id', _$id);
+  static String _$subject(Conversation v) => v.subject;
+  static const Field<Conversation, String> _f$subject =
+      Field('subject', _$subject);
   static List<String> _$participants(Conversation v) => v.participants;
   static const Field<Conversation, List<String>> _f$participants =
       Field('participants', _$participants);
@@ -31,6 +34,10 @@ class ConversationMapper extends ClassMapperBase<Conversation> {
   static String _$createdBy(Conversation v) => v.createdBy;
   static const Field<Conversation, String> _f$createdBy =
       Field('createdBy', _$createdBy);
+  static String? _$previousConversationId(Conversation v) =>
+      v.previousConversationId;
+  static const Field<Conversation, String> _f$previousConversationId =
+      Field('previousConversationId', _$previousConversationId, opt: true);
   static Map<String, dynamic> _$metadata(Conversation v) => v.metadata;
   static const Field<Conversation, Map<String, dynamic>> _f$metadata =
       Field('metadata', _$metadata, opt: true, def: const {});
@@ -38,18 +45,22 @@ class ConversationMapper extends ClassMapperBase<Conversation> {
   @override
   final MappableFields<Conversation> fields = const {
     #id: _f$id,
+    #subject: _f$subject,
     #participants: _f$participants,
     #createdAt: _f$createdAt,
     #createdBy: _f$createdBy,
+    #previousConversationId: _f$previousConversationId,
     #metadata: _f$metadata,
   };
 
   static Conversation _instantiate(DecodingData data) {
     return Conversation(
         id: data.dec(_f$id),
+        subject: data.dec(_f$subject),
         participants: data.dec(_f$participants),
         createdAt: data.dec(_f$createdAt),
         createdBy: data.dec(_f$createdBy),
+        previousConversationId: data.dec(_f$previousConversationId),
         metadata: data.dec(_f$metadata));
   }
 
@@ -111,9 +122,11 @@ abstract class ConversationCopyWith<$R, $In extends Conversation, $Out>
       get metadata;
   $R call(
       {String? id,
+      String? subject,
       List<String>? participants,
       DateTime? createdAt,
       String? createdBy,
+      String? previousConversationId,
       Map<String, dynamic>? metadata});
   ConversationCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -139,23 +152,31 @@ class _ConversationCopyWithImpl<$R, $Out>
   @override
   $R call(
           {String? id,
+          String? subject,
           List<String>? participants,
           DateTime? createdAt,
           String? createdBy,
+          Object? previousConversationId = $none,
           Map<String, dynamic>? metadata}) =>
       $apply(FieldCopyWithData({
         if (id != null) #id: id,
+        if (subject != null) #subject: subject,
         if (participants != null) #participants: participants,
         if (createdAt != null) #createdAt: createdAt,
         if (createdBy != null) #createdBy: createdBy,
+        if (previousConversationId != $none)
+          #previousConversationId: previousConversationId,
         if (metadata != null) #metadata: metadata
       }));
   @override
   Conversation $make(CopyWithData data) => Conversation(
       id: data.get(#id, or: $value.id),
+      subject: data.get(#subject, or: $value.subject),
       participants: data.get(#participants, or: $value.participants),
       createdAt: data.get(#createdAt, or: $value.createdAt),
       createdBy: data.get(#createdBy, or: $value.createdBy),
+      previousConversationId:
+          data.get(#previousConversationId, or: $value.previousConversationId),
       metadata: data.get(#metadata, or: $value.metadata));
 
   @override

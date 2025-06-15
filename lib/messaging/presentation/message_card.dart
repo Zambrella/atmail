@@ -30,7 +30,7 @@ class MessageCard extends StatelessWidget {
                   children: [
                     if (!isSender) Text(message.sender),
                     Flexible(
-                      child: Text(message.text),
+                      child: Text(message.content.toString()),
                     ),
                     if (isSender) Text(message.status.toString()),
                   ],

@@ -13,7 +13,7 @@ class MessageMapper extends ClassMapperBase<Message> {
   static MessageMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = MessageMapper._());
-      MessageTypeMapper.ensureInitialized();
+      MessageContentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -27,10 +27,9 @@ class MessageMapper extends ClassMapperBase<Message> {
   static String _$conversationId(Message v) => v.conversationId;
   static const Field<Message, String> _f$conversationId =
       Field('conversationId', _$conversationId);
-  static String _$text(Message v) => v.text;
-  static const Field<Message, String> _f$text = Field('text', _$text);
-  static MessageType _$type(Message v) => v.type;
-  static const Field<Message, MessageType> _f$type = Field('type', _$type);
+  static MessageContent _$content(Message v) => v.content;
+  static const Field<Message, MessageContent> _f$content =
+      Field('content', _$content);
   static String _$from(Message v) => v.from;
   static const Field<Message, String> _f$from = Field('from', _$from);
   static String _$to(Message v) => v.to;
@@ -43,8 +42,7 @@ class MessageMapper extends ClassMapperBase<Message> {
   final MappableFields<Message> fields = const {
     #timestamp: _f$timestamp,
     #conversationId: _f$conversationId,
-    #text: _f$text,
-    #type: _f$type,
+    #content: _f$content,
     #from: _f$from,
     #to: _f$to,
     #metadata: _f$metadata,
@@ -54,8 +52,7 @@ class MessageMapper extends ClassMapperBase<Message> {
     return Message(
         timestamp: data.dec(_f$timestamp),
         conversationId: data.dec(_f$conversationId),
-        text: data.dec(_f$text),
-        type: data.dec(_f$type),
+        content: data.dec(_f$content),
         from: data.dec(_f$from),
         to: data.dec(_f$to),
         metadata: data.dec(_f$metadata));
@@ -116,8 +113,7 @@ abstract class MessageCopyWith<$R, $In extends Message, $Out>
   $R call(
       {DateTime? timestamp,
       String? conversationId,
-      String? text,
-      MessageType? type,
+      MessageContent? content,
       String? from,
       String? to,
       Map<String, dynamic>? metadata});
@@ -140,16 +136,14 @@ class _MessageCopyWithImpl<$R, $Out>
   $R call(
           {DateTime? timestamp,
           String? conversationId,
-          String? text,
-          MessageType? type,
+          MessageContent? content,
           String? from,
           String? to,
           Map<String, dynamic>? metadata}) =>
       $apply(FieldCopyWithData({
         if (timestamp != null) #timestamp: timestamp,
         if (conversationId != null) #conversationId: conversationId,
-        if (text != null) #text: text,
-        if (type != null) #type: type,
+        if (content != null) #content: content,
         if (from != null) #from: from,
         if (to != null) #to: to,
         if (metadata != null) #metadata: metadata
@@ -158,8 +152,7 @@ class _MessageCopyWithImpl<$R, $Out>
   Message $make(CopyWithData data) => Message(
       timestamp: data.get(#timestamp, or: $value.timestamp),
       conversationId: data.get(#conversationId, or: $value.conversationId),
-      text: data.get(#text, or: $value.text),
-      type: data.get(#type, or: $value.type),
+      content: data.get(#content, or: $value.content),
       from: data.get(#from, or: $value.from),
       to: data.get(#to, or: $value.to),
       metadata: data.get(#metadata, or: $value.metadata));

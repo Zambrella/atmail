@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
+import 'package:atmail/messaging/domain/message_content.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class NewMessageState {
@@ -21,6 +22,7 @@ class NewMessageCubit extends Cubit<NewMessageState> {
   final String conversationId;
 
   void addMessage(String message) {
-    unawaited(_conversationRepository.sendMessage(conversationId: conversationId, textMessage: message));
+    final content = TextContent(message);
+    unawaited(_conversationRepository.sendMessage(conversationId: conversationId, content: content));
   }
 }

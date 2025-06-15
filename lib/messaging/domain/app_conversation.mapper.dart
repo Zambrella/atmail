@@ -23,6 +23,9 @@ class AppConversationMapper extends ClassMapperBase<AppConversation> {
 
   static String _$id(AppConversation v) => v.id;
   static const Field<AppConversation, String> _f$id = Field('id', _$id);
+  static String _$subject(AppConversation v) => v.subject;
+  static const Field<AppConversation, String> _f$subject =
+      Field('subject', _$subject);
   static List<String> _$participants(AppConversation v) => v.participants;
   static const Field<AppConversation, List<String>> _f$participants =
       Field('participants', _$participants);
@@ -35,6 +38,10 @@ class AppConversationMapper extends ClassMapperBase<AppConversation> {
   static List<AppMessage> _$messages(AppConversation v) => v.messages;
   static const Field<AppConversation, List<AppMessage>> _f$messages =
       Field('messages', _$messages);
+  static String? _$previousConversationId(AppConversation v) =>
+      v.previousConversationId;
+  static const Field<AppConversation, String> _f$previousConversationId =
+      Field('previousConversationId', _$previousConversationId, opt: true);
   static Map<String, dynamic> _$metadata(AppConversation v) => v.metadata;
   static const Field<AppConversation, Map<String, dynamic>> _f$metadata =
       Field('metadata', _$metadata, opt: true, def: const {});
@@ -42,20 +49,24 @@ class AppConversationMapper extends ClassMapperBase<AppConversation> {
   @override
   final MappableFields<AppConversation> fields = const {
     #id: _f$id,
+    #subject: _f$subject,
     #participants: _f$participants,
     #createdAt: _f$createdAt,
     #createdBy: _f$createdBy,
     #messages: _f$messages,
+    #previousConversationId: _f$previousConversationId,
     #metadata: _f$metadata,
   };
 
   static AppConversation _instantiate(DecodingData data) {
     return AppConversation(
         id: data.dec(_f$id),
+        subject: data.dec(_f$subject),
         participants: data.dec(_f$participants),
         createdAt: data.dec(_f$createdAt),
         createdBy: data.dec(_f$createdBy),
         messages: data.dec(_f$messages),
+        previousConversationId: data.dec(_f$previousConversationId),
         metadata: data.dec(_f$metadata));
   }
 
@@ -120,10 +131,12 @@ abstract class AppConversationCopyWith<$R, $In extends AppConversation, $Out>
       get metadata;
   $R call(
       {String? id,
+      String? subject,
       List<String>? participants,
       DateTime? createdAt,
       String? createdBy,
       List<AppMessage>? messages,
+      String? previousConversationId,
       Map<String, dynamic>? metadata});
   AppConversationCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
       Then<$Out2, $R2> t);
@@ -154,26 +167,34 @@ class _AppConversationCopyWithImpl<$R, $Out>
   @override
   $R call(
           {String? id,
+          String? subject,
           List<String>? participants,
           DateTime? createdAt,
           String? createdBy,
           List<AppMessage>? messages,
+          Object? previousConversationId = $none,
           Map<String, dynamic>? metadata}) =>
       $apply(FieldCopyWithData({
         if (id != null) #id: id,
+        if (subject != null) #subject: subject,
         if (participants != null) #participants: participants,
         if (createdAt != null) #createdAt: createdAt,
         if (createdBy != null) #createdBy: createdBy,
         if (messages != null) #messages: messages,
+        if (previousConversationId != $none)
+          #previousConversationId: previousConversationId,
         if (metadata != null) #metadata: metadata
       }));
   @override
   AppConversation $make(CopyWithData data) => AppConversation(
       id: data.get(#id, or: $value.id),
+      subject: data.get(#subject, or: $value.subject),
       participants: data.get(#participants, or: $value.participants),
       createdAt: data.get(#createdAt, or: $value.createdAt),
       createdBy: data.get(#createdBy, or: $value.createdBy),
       messages: data.get(#messages, or: $value.messages),
+      previousConversationId:
+          data.get(#previousConversationId, or: $value.previousConversationId),
       metadata: data.get(#metadata, or: $value.metadata));
 
   @override

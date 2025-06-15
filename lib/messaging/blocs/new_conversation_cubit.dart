@@ -38,11 +38,13 @@ class NewConversationCubit extends Cubit<NewConversationState> {
       if (recipients.length == 1) {
         conversation = await _conversationRepository.startConversation(
           withAtSign: AtUtils.fixAtSign(recipients.first),
+          subject: subject,
           initialMessage: message,
         );
       } else {
         conversation = await _conversationRepository.startGroupConversation(
           withAtSigns: recipients.map(AtUtils.fixAtSign).toList(),
+          subject: subject,
           initialMessage: message,
         );
       }

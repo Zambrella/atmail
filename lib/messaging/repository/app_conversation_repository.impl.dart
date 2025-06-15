@@ -4,7 +4,8 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:atmail/messaging/domain/app_conversation.dart';
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:atmail/messaging/domain/app_message.dart';
-import 'package:atmail/messaging/domain/message_type.dart';
+import 'package:atmail/messaging/domain/message_content.dart';
+import 'package:atmail/messaging/domain/message_status.dart';
 import 'package:atmail/messaging/repository/conversation.dart';
 import 'package:atmail/messaging/repository/message.dart';
 import 'package:logging/logging.dart';
@@ -132,6 +133,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   AppConversation _convertToAppConversation(Conversation conversation, List<AppMessage> messages) {
     return AppConversation(
       id: conversation.id,
+      subject: conversation.subject,
       participants: conversation.participants,
       createdAt: conversation.createdAt,
       createdBy: conversation.createdBy,
@@ -143,6 +145,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Conversation _convertFromAppConversation(AppConversation appConversation) {
     return Conversation(
       id: appConversation.id,
+      subject: appConversation.subject,
       participants: appConversation.participants,
       createdAt: appConversation.createdAt,
       createdBy: appConversation.createdBy,
@@ -153,8 +156,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   AppMessage _convertToAppMessage(Message message) {
     return AppMessage(
       timestamp: message.timestamp,
-      text: message.text,
-      type: message.type,
+      content: message.content,
       sender: message.from,
       // _convertToAppMessage is only called when fetching messages from the server and for them to exist they must be
       // sent and delivered.
@@ -167,8 +169,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     return Message(
       timestamp: appMessage.timestamp,
       conversationId: conversationId,
-      text: appMessage.text,
-      type: appMessage.type,
+      content: appMessage.content,
       from: appMessage.sender,
       to: recipient,
       metadata: appMessage.metadata,
@@ -547,6 +548,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Future<AppConversation> startConversation({
     required String withAtSign,
     required String initialMessage,
+    required String subject,
     Map<String, dynamic>? metadata,
   }) async {
     try {
@@ -558,6 +560,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Create conversation
       AppConversation appConversation = AppConversation(
         id: conversationId,
+        subject: subject,
         participants: [atClient.getCurrentAtSign()!, withAtSign],
         createdAt: now,
         createdBy: atClient.getCurrentAtSign()!,
@@ -576,7 +579,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
                   namespace: namespace,
                 )
                 ..sharedWith(withAtSign)
-                ..cache(-1, true))
+                // Conversation metadata should always be available to those that have been invited so setting
+                // ccd to false.
+                ..cache(-1, false))
               .build();
 
       // Store conversation data
@@ -599,7 +604,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         // Send the initial message
         await sendMessage(
           conversationId: conversationId,
-          textMessage: initialMessage,
+          content: TextContent(initialMessage),
         );
 
         return appConversation;
@@ -616,6 +621,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Future<AppConversation> startGroupConversation({
     required List<String> withAtSigns,
     required String initialMessage,
+    required String subject,
     String? groupName,
     Map<String, dynamic>? metadata,
   }) async {
@@ -635,6 +641,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
       AppConversation appConversation = AppConversation(
         id: conversationId,
+        subject: subject,
         participants: allParticipants,
         createdAt: now,
         createdBy: atClient.getCurrentAtSign()!,
@@ -654,7 +661,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
                     namespace: namespace,
                   )
                   ..sharedWith(participant)
-                  ..cache(-1, true))
+                  // Conversation metadata should always be available to those that have been invited so setting
+                  // ccd to false.
+                  ..cache(-1, false))
                 .build();
 
         await atClient.put(convKey, jsonEncode(convData));
@@ -674,7 +683,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Send the initial message
       await sendMessage(
         conversationId: conversationId,
-        textMessage: initialMessage,
+        content: TextContent(initialMessage),
       );
 
       return appConversation;
@@ -691,8 +700,8 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   }
 
   @override
-  Future<void> deleteConversation(String conversationId) async {
-    logger.fine('Deleting conversation $conversationId');
+  Future<void> leaveConversation(String conversationId) async {
+    logger.fine('Leaving conversation $conversationId');
     try {
       // Find the conversation
       final conversation = _getConversation(conversationId);
@@ -763,12 +772,11 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   @override
   Future<AppMessage> sendMessage({
     required String conversationId,
-    required String textMessage,
+    required MessageContent content,
   }) async {
     final message = AppMessage(
       timestamp: DateTime.now(),
-      text: textMessage,
-      type: MessageType.plainText,
+      content: content,
       status: MessageStatusPending(),
       sender: atClient.getCurrentAtSign()!,
     );
@@ -836,6 +844,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Future<void> deleteMessage({
     required String conversationId,
     required String messageId,
+    bool quietly = false,
   }) async {
     try {
       logger.fine('Deleting message: $messageId from conversation: $conversationId');

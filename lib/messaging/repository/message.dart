@@ -1,4 +1,4 @@
-import 'package:atmail/messaging/domain/message_type.dart';
+import 'package:atmail/messaging/domain/message_content.dart';
 import 'package:dart_mappable/dart_mappable.dart';
 
 part 'message.mapper.dart';
@@ -8,8 +8,7 @@ class Message with MessageMappable implements Comparable<Message> {
   const Message({
     required this.timestamp,
     required this.conversationId,
-    required this.text,
-    required this.type,
+    required this.content,
     required this.from,
     required this.to,
     this.metadata = const {},
@@ -22,11 +21,8 @@ class Message with MessageMappable implements Comparable<Message> {
   /// Unique identifier for the conversation this message belongs to.
   final String conversationId;
 
-  /// The contents of the message.
-  final String text;
-
-  /// The type of the message.
-  final MessageType type;
+  /// The content of the message.
+  final MessageContent content;
 
   /// The sender of the message.
   final String from;
