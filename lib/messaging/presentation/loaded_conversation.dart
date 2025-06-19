@@ -1,4 +1,5 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:atmail/messaging/blocs/conversation_archive_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation.dart';
@@ -54,7 +55,15 @@ class LoadedConversationState extends State<LoadedConversation> {
 
   void _deleteConversation() {
     // TODO: Show confirmation dialog.
-    context.read<DeleteConversationCubit>().deleteConversation(conversation.id);
+    context.read<DeleteConversationCubit>().deleteConversation();
+  }
+
+  void _archiveConversation() {
+    context.read<ConversationArchiveCubit>().archiveConversation();
+  }
+
+  void _unarchiveConversation() {
+    context.read<ConversationArchiveCubit>().unarchiveConversation();
   }
 
   @override
@@ -83,6 +92,16 @@ class LoadedConversationState extends State<LoadedConversation> {
               icon: Icon(Icons.delete),
               onPressed: _deleteConversation,
             ),
+            if (!conversation.isArchived)
+              IconButton(
+                icon: Icon(Icons.archive),
+                onPressed: _archiveConversation,
+              ),
+            if (conversation.isArchived)
+              IconButton(
+                icon: Icon(Icons.unarchive),
+                onPressed: _unarchiveConversation,
+              ),
           ],
         ),
         body: Column(
@@ -109,41 +128,43 @@ class LoadedConversationState extends State<LoadedConversation> {
                   ),
                 ),
               ),
-              child: Form(
-                key: _formKey,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _messageController,
-                        maxLines: null,
-                        minLines: 1,
-                        textInputAction: TextInputAction.newline,
-                        decoration: const InputDecoration(
-                          hintText: 'Type your message...',
-                          border: OutlineInputBorder(),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter a message';
-                          }
-                          if (value.trim().length > 1000) {
-                            return 'Message is too long (max 1000 characters)';
-                          }
-                          return null;
-                        },
+              child: conversation.isArchived
+                  ? Text('Conversation archived')
+                  : Form(
+                      key: _formKey,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _messageController,
+                              maxLines: null,
+                              minLines: 1,
+                              textInputAction: TextInputAction.newline,
+                              decoration: const InputDecoration(
+                                hintText: 'Type your message...',
+                                border: OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter a message';
+                                }
+                                if (value.trim().length > 1000) {
+                                  return 'Message is too long (max 1000 characters)';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8.0),
+                          IconButton(
+                            onPressed: _submitMessage,
+                            icon: const Icon(Icons.send),
+                            tooltip: 'Send message',
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8.0),
-                    IconButton(
-                      onPressed: _submitMessage,
-                      icon: const Icon(Icons.send),
-                      tooltip: 'Send message',
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),

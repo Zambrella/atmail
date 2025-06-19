@@ -37,7 +37,7 @@ class _ConversationListState extends State<ConversationList> {
             itemBuilder: (context, index) {
               final conversation = conversations[index];
               return ListTile(
-                title: Text(conversation.participants.join(', ')),
+                title: Text((conversation.isArchived ? '[Archived] ' : '') + conversation.participants.join(', ')),
                 subtitle: Text(conversation.latestMessage?.toString() ?? 'No message'),
                 onTap: () {
                   ConversationDetailsRoute(conversation.id).push(context);

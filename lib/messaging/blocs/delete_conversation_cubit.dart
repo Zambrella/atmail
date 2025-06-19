@@ -24,13 +24,13 @@ class DeleteConversationFailure extends DeleteConversationState {
 }
 
 class DeleteConversationCubit extends Cubit<DeleteConversationState> {
-  DeleteConversationCubit(
-    this._conversationRepository,
-  ) : super(const DeleteConversationInitial());
+  DeleteConversationCubit(this._conversationRepository, {required this.conversationId})
+    : super(const DeleteConversationInitial());
 
   final AppConversationRepository _conversationRepository;
+  final String conversationId;
 
-  Future<void> deleteConversation(String conversationId) async {
+  Future<void> deleteConversation() async {
     emit(const DeleteConversationLoading());
     try {
       await _conversationRepository.deleteConversation(conversationId);

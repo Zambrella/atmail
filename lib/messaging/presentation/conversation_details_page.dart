@@ -1,3 +1,4 @@
+import 'package:atmail/messaging/blocs/conversation_archive_cubit.dart';
 import 'package:atmail/messaging/blocs/conversation_details_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_message_cubit.dart';
@@ -54,6 +55,13 @@ class ConversationDetailsPageState extends State<ConversationDetailsPage> {
                       BlocProvider(
                         create: (context) => DeleteConversationCubit(
                           context.read<AppConversationRepository>(),
+                          conversationId: conversation.id,
+                        ),
+                      ),
+                      BlocProvider(
+                        create: (context) => ConversationArchiveCubit(
+                          context.read<AppConversationRepository>(),
+                          conversationId: conversation.id,
                         ),
                       ),
                     ],
