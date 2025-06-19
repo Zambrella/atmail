@@ -45,6 +45,9 @@ class AppConversationMapper extends ClassMapperBase<AppConversation> {
   static bool _$isArchived(AppConversation v) => v.isArchived;
   static const Field<AppConversation, bool> _f$isArchived =
       Field('isArchived', _$isArchived, opt: true, def: false);
+  static bool _$hasLeft(AppConversation v) => v.hasLeft;
+  static const Field<AppConversation, bool> _f$hasLeft =
+      Field('hasLeft', _$hasLeft, opt: true, def: false);
   static Map<String, dynamic> _$metadata(AppConversation v) => v.metadata;
   static const Field<AppConversation, Map<String, dynamic>> _f$metadata =
       Field('metadata', _$metadata, opt: true, def: const {});
@@ -59,6 +62,7 @@ class AppConversationMapper extends ClassMapperBase<AppConversation> {
     #messages: _f$messages,
     #previousConversationId: _f$previousConversationId,
     #isArchived: _f$isArchived,
+    #hasLeft: _f$hasLeft,
     #metadata: _f$metadata,
   };
 
@@ -72,6 +76,7 @@ class AppConversationMapper extends ClassMapperBase<AppConversation> {
         messages: data.dec(_f$messages),
         previousConversationId: data.dec(_f$previousConversationId),
         isArchived: data.dec(_f$isArchived),
+        hasLeft: data.dec(_f$hasLeft),
         metadata: data.dec(_f$metadata));
   }
 
@@ -143,6 +148,7 @@ abstract class AppConversationCopyWith<$R, $In extends AppConversation, $Out>
       List<AppMessage>? messages,
       String? previousConversationId,
       bool? isArchived,
+      bool? hasLeft,
       Map<String, dynamic>? metadata});
   AppConversationCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
       Then<$Out2, $R2> t);
@@ -180,6 +186,7 @@ class _AppConversationCopyWithImpl<$R, $Out>
           List<AppMessage>? messages,
           Object? previousConversationId = $none,
           bool? isArchived,
+          bool? hasLeft,
           Map<String, dynamic>? metadata}) =>
       $apply(FieldCopyWithData({
         if (id != null) #id: id,
@@ -191,6 +198,7 @@ class _AppConversationCopyWithImpl<$R, $Out>
         if (previousConversationId != $none)
           #previousConversationId: previousConversationId,
         if (isArchived != null) #isArchived: isArchived,
+        if (hasLeft != null) #hasLeft: hasLeft,
         if (metadata != null) #metadata: metadata
       }));
   @override
@@ -204,6 +212,7 @@ class _AppConversationCopyWithImpl<$R, $Out>
       previousConversationId:
           data.get(#previousConversationId, or: $value.previousConversationId),
       isArchived: data.get(#isArchived, or: $value.isArchived),
+      hasLeft: data.get(#hasLeft, or: $value.hasLeft),
       metadata: data.get(#metadata, or: $value.metadata));
 
   @override

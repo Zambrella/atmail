@@ -135,6 +135,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Future<AppConversation> _convertToAppConversation(Conversation conversation, List<AppMessage> messages) async {
     // Check if conversation is archived
     bool isArchived = await _isConversationArchived(conversation.id);
+    final hasLeft = await _hasParticipantLeft(conversation.id, atClient.getCurrentAtSign()!);
 
     return AppConversation(
       id: conversation.id,
@@ -144,6 +145,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       createdBy: conversation.createdBy,
       messages: messages,
       isArchived: isArchived,
+      hasLeft: hasLeft,
       metadata: conversation.metadata,
     );
   }
@@ -827,25 +829,22 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       };
 
       for (String participant in conversation.participants) {
-        if (participant != atClient.getCurrentAtSign()) {
-          AtKey statusAtKey = AtKey()
-            ..key = statusKey
-            ..namespace = namespace
-            ..sharedWith = participant
-            ..sharedBy = atClient.getCurrentAtSign();
+        AtKey statusAtKey = AtKey()
+          ..key = statusKey
+          ..namespace = namespace
+          ..sharedWith = participant
+          ..sharedBy = atClient.getCurrentAtSign();
 
-          //? Do I need to set the cache property here? Or because the key is "known" it doesn't need to be.
+        await atClient.put(statusAtKey, jsonEncode(leftMessage));
 
-          await atClient.put(statusAtKey, jsonEncode(leftMessage));
-
-          await atClient.notificationService.notify(
-            NotificationParams.forUpdate(statusAtKey, value: jsonEncode(leftMessage)),
-          );
-        }
+        await atClient.notificationService.notify(
+          NotificationParams.forUpdate(statusAtKey, value: jsonEncode(leftMessage)),
+        );
       }
 
-      // Remove from local state
-      _removeConversation(conversationId);
+      // Update local state
+      final updatedConversation = conversation.copyWith(hasLeft: true);
+      _addOrUpdateConversation(updatedConversation);
 
       logger.info('Successfully left conversation $conversationId');
     } catch (e, st) {

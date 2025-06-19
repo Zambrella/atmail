@@ -1,7 +1,8 @@
-import 'package:atmail/messaging/blocs/conversation_archive_cubit.dart';
+import 'package:atmail/messaging/blocs/archive_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/conversation_details_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_message_cubit.dart';
+import 'package:atmail/messaging/blocs/leave_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:atmail/messaging/presentation/loaded_conversation.dart';
@@ -59,7 +60,13 @@ class ConversationDetailsPageState extends State<ConversationDetailsPage> {
                         ),
                       ),
                       BlocProvider(
-                        create: (context) => ConversationArchiveCubit(
+                        create: (context) => ArchiveConversationCubit(
+                          context.read<AppConversationRepository>(),
+                          conversationId: conversation.id,
+                        ),
+                      ),
+                      BlocProvider(
+                        create: (context) => LeaveConversationCubit(
                           context.read<AppConversationRepository>(),
                           conversationId: conversation.id,
                         ),

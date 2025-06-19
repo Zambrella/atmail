@@ -23,8 +23,9 @@ class ConversationArchiveStateError extends ConversationArchiveState {
   final String error;
 }
 
-class ConversationArchiveCubit extends Cubit<ConversationArchiveState> {
-  ConversationArchiveCubit(this._conversationRepository, {required this.conversationId})
+// TODO: Chnge this to `ArchiveConvesationCubit`
+class ArchiveConversationCubit extends Cubit<ConversationArchiveState> {
+  ArchiveConversationCubit(this._conversationRepository, {required this.conversationId})
     : super(const ConversationArchiveStateInitial());
 
   final AppConversationRepository _conversationRepository;

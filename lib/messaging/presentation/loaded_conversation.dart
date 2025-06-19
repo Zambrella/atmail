@@ -1,6 +1,7 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
-import 'package:atmail/messaging/blocs/conversation_archive_cubit.dart';
+import 'package:atmail/messaging/blocs/archive_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
+import 'package:atmail/messaging/blocs/leave_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation.dart';
 import 'package:atmail/messaging/presentation/message_card.dart';
@@ -45,10 +46,7 @@ class LoadedConversationState extends State<LoadedConversation> {
   void _submitMessage() {
     if (_formKey.currentState?.validate() ?? false) {
       final messageText = _messageController.text.trim();
-
       context.read<NewMessageCubit>().addMessage(messageText);
-
-      // Clear the text field after successful submission
       _messageController.clear();
     }
   }
@@ -59,11 +57,15 @@ class LoadedConversationState extends State<LoadedConversation> {
   }
 
   void _archiveConversation() {
-    context.read<ConversationArchiveCubit>().archiveConversation();
+    context.read<ArchiveConversationCubit>().archiveConversation();
   }
 
   void _unarchiveConversation() {
-    context.read<ConversationArchiveCubit>().unarchiveConversation();
+    context.read<ArchiveConversationCubit>().unarchiveConversation();
+  }
+
+  void _leaveConversation() {
+    context.read<LeaveConversationCubit>().leaveConversation();
   }
 
   @override
@@ -92,6 +94,11 @@ class LoadedConversationState extends State<LoadedConversation> {
               icon: Icon(Icons.delete),
               onPressed: _deleteConversation,
             ),
+            if (!conversation.hasLeft)
+              IconButton(
+                icon: Icon(Icons.exit_to_app),
+                onPressed: _leaveConversation,
+              ),
             if (!conversation.isArchived)
               IconButton(
                 icon: Icon(Icons.archive),
@@ -128,8 +135,8 @@ class LoadedConversationState extends State<LoadedConversation> {
                   ),
                 ),
               ),
-              child: conversation.isArchived
-                  ? Text('Conversation archived')
+              child: conversation.hasLeft
+                  ? Text('Conversation left')
                   : Form(
                       key: _formKey,
                       child: Row(
