@@ -28,9 +28,10 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
   // Key prefixes
   static const String kConvPrefix = 'conv';
-  static const String kConvArchivedPrefix = 'conv_archived';
+  static const String kConvArchivedIndex = 'conv_archived';
   static const String kConvIndexPrefix = 'conv_index';
   static const String kMsgPrefix = 'msg';
+  static const String kStatusPrefix = 'status';
 
   // Single source of truth for all conversations
   final BehaviorSubject<List<AppConversation>> _conversations = BehaviorSubject<List<AppConversation>>.seeded([]);
@@ -131,7 +132,10 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   }
 
   // Converter functions
-  AppConversation _convertToAppConversation(Conversation conversation, List<AppMessage> messages) {
+  Future<AppConversation> _convertToAppConversation(Conversation conversation, List<AppMessage> messages) async {
+    // Check if conversation is archived
+    bool isArchived = await _isConversationArchived(conversation.id);
+
     return AppConversation(
       id: conversation.id,
       subject: conversation.subject,
@@ -139,8 +143,27 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       createdAt: conversation.createdAt,
       createdBy: conversation.createdBy,
       messages: messages,
+      isArchived: isArchived,
       metadata: conversation.metadata,
     );
+  }
+
+  Future<bool> _isConversationArchived(String conversationId) async {
+    try {
+      AtKey archivedKey = AtKey()
+        ..key = kConvArchivedIndex
+        ..namespace = namespace;
+
+      AtValue existing = await atClient.get(archivedKey);
+      if (existing.value != null) {
+        Map<String, String> archivedData = Map<String, String>.from(jsonDecode(existing.value));
+        return archivedData.containsKey(conversationId);
+      }
+      return false;
+    } catch (e) {
+      // Index doesn't exist, not archived
+      return false;
+    }
   }
 
   Conversation _convertFromAppConversation(AppConversation appConversation) {
@@ -185,7 +208,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           // Notification value needs to be used as the data might not be in the server yet.
           final conversation = ConversationMapper.fromJson(notification.value!);
           List<AppMessage> messages = await _loadConversationMessages(conversationId);
-          AppConversation appConversation = _convertToAppConversation(conversation, messages);
+          AppConversation appConversation = await _convertToAppConversation(conversation, messages);
           _addOrUpdateConversation(appConversation);
         } else if (conversationId != null && notification.operation == 'delete') {
           await _removeFromConversationIndex(conversationId);
@@ -296,7 +319,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             // Load messages for this conversation
             List<AppMessage> messages = await _loadConversationMessages(conversationId);
 
-            AppConversation appConversation = _convertToAppConversation(conversation, messages);
+            AppConversation appConversation = await _convertToAppConversation(conversation, messages);
             _addOrUpdateConversation(appConversation);
 
             logger.fine('Loaded sent conversation: $conversationId');
@@ -328,7 +351,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             // Load messages for this conversation
             List<AppMessage> messages = await _loadConversationMessages(conversationId);
 
-            AppConversation appConversation = _convertToAppConversation(conversation, messages);
+            AppConversation appConversation = await _convertToAppConversation(conversation, messages);
             _addOrUpdateConversation(appConversation);
 
             logger.fine('Loaded received conversation: $conversationId');
@@ -387,7 +410,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           // Load messages for this conversation
           List<AppMessage> messages = await _loadConversationMessages(conversationId);
 
-          AppConversation appConversation = _convertToAppConversation(conversation, messages);
+          AppConversation appConversation = await _convertToAppConversation(conversation, messages);
           _addOrUpdateConversation(appConversation);
         }
       }
@@ -438,6 +461,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       try {
         AtValue value = await atClient.get(key);
         if (value.value != null) {
+          print(value.value);
           Message message = MessageMapper.fromJson(value.value);
           messages.add(_convertToAppMessage(message));
         }
@@ -471,27 +495,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     }
 
     return messages;
-  }
-
-  Future<void> _loadMessage(String messageKey, String fromAtSign, String conversationId) async {
-    logger.fine('Loading message with key: $messageKey');
-    try {
-      AtKey key = AtKey()
-        ..key = messageKey.split(':').last.split('@').first
-        ..namespace = namespace
-        ..sharedBy = fromAtSign
-        ..sharedWith = atClient.getCurrentAtSign();
-
-      AtValue value = await atClient.get(key);
-      if (value.value != null) {
-        Message message = MessageMapper.fromJson(value.value);
-        AppMessage appMessage = _convertToAppMessage(message);
-
-        _addMessageToConversation(conversationId, appMessage);
-      }
-    } catch (e, st) {
-      logger.severe('Error loading message from key: $messageKey', e, st);
-    }
   }
 
   Future<void> _refreshConversations() async {
@@ -542,6 +545,59 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       }
     } catch (e, st) {
       logger.warning('Error removing from conversation index', e, st);
+    }
+  }
+
+  Future<void> _updateArchivedIndex(String conversationId, bool isArchived) async {
+    logger.fine('Updating archived index for conversation $conversationId');
+    try {
+      AtKey archivedKey = AtKey()
+        ..key = kConvArchivedIndex
+        ..namespace = namespace
+        ..metadata = Metadata()
+        ..metadata.isPublic = false;
+
+      Map<String, String> archivedData = {};
+
+      try {
+        AtValue existing = await atClient.get(archivedKey);
+        if (existing.value != null) {
+          archivedData = Map<String, String>.from(jsonDecode(existing.value));
+        }
+      } catch (e) {
+        // Index doesn't exist yet
+      }
+
+      if (isArchived) {
+        archivedData[conversationId] = DateTime.now().toIso8601String();
+      } else {
+        archivedData.remove(conversationId);
+      }
+
+      await atClient.put(archivedKey, jsonEncode(archivedData));
+    } catch (e, st) {
+      logger.severe('Error updating archived index', e, st);
+    }
+  }
+
+  Future<bool> _hasParticipantLeft(String conversationId, String participant) async {
+    try {
+      final statusKey = '$kStatusPrefix.$conversationId';
+      AtKey statusAtKey = AtKey()
+        ..key = statusKey
+        ..namespace = namespace
+        ..sharedBy = participant
+        ..sharedWith = atClient.getCurrentAtSign();
+
+      AtValue statusValue = await atClient.get(statusAtKey);
+      if (statusValue.value != null) {
+        final statusData = jsonDecode(statusValue.value);
+        return statusData['status'] == 'left';
+      }
+      return false;
+    } catch (e) {
+      // Key doesn't exist, assume they haven't left
+      return false;
     }
   }
 
@@ -701,69 +757,155 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   }
 
   @override
-  Future<void> leaveConversation(String conversationId) async {
-    logger.fine('Leaving conversation $conversationId');
+  Future<List<AppConversation>> getArchivedConversations() async {
+    logger.fine('Getting archived conversations');
+    final currentConversations = _conversations.value;
+    return currentConversations.where((conversation) => conversation.isArchived).toList();
+  }
+
+  @override
+  Future<void> archiveConversation(String conversationId) async {
+    logger.fine('Archiving conversation $conversationId');
     try {
-      // Find the conversation
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
         throw Exception('Conversation not found');
       }
 
-      // Verify caller is the creator
-      if (conversation.createdBy != atClient.getCurrentAtSign()) {
-        throw Exception('Only the conversation creator can delete it');
+      // Update archived index
+      await _updateArchivedIndex(conversationId, true);
+
+      // Update conversation in local state
+      final archivedConversation = conversation.copyWith(isArchived: true);
+      _addOrUpdateConversation(archivedConversation);
+
+      logger.info('Successfully archived conversation $conversationId');
+    } catch (e, st) {
+      logger.severe('Error archiving conversation', e, st);
+      throw Exception('Error archiving conversation: $e');
+    }
+  }
+
+  @override
+  Future<void> unarchiveConversation(String conversationId) async {
+    logger.fine('Unarchiving conversation $conversationId');
+    try {
+      final conversation = _getConversation(conversationId);
+      if (conversation == null) {
+        throw Exception('Conversation not found');
       }
 
-      // Delete shared keys for each participant
+      // Update archived index
+      await _updateArchivedIndex(conversationId, false);
+
+      // Update conversation in local state
+      final unarchivedConversation = conversation.copyWith(isArchived: false);
+      _addOrUpdateConversation(unarchivedConversation);
+
+      logger.info('Successfully unarchived conversation $conversationId');
+    } catch (e, st) {
+      logger.severe('Error unarchiving conversation', e, st);
+      throw Exception('Error unarchiving conversation: $e');
+    }
+  }
+
+  @override
+  Future<void> leaveConversation(String conversationId) async {
+    logger.fine('Leaving conversation $conversationId');
+    try {
+      final conversation = _getConversation(conversationId);
+      if (conversation == null) {
+        throw Exception('Conversation not found');
+      }
+
+      // Mark as left by sharing status key with all participants
+      final statusKey = '$kStatusPrefix.$conversationId';
+      final leftMessage = {
+        'status': 'left',
+        'timestamp': DateTime.now().toIso8601String(),
+        'atsign': atClient.getCurrentAtSign(),
+      };
+
       for (String participant in conversation.participants) {
         if (participant != atClient.getCurrentAtSign()) {
-          AtKey convKey = AtKey()
-            ..key = '$kConvPrefix.$conversationId'
+          AtKey statusAtKey = AtKey()
+            ..key = statusKey
             ..namespace = namespace
             ..sharedWith = participant
             ..sharedBy = atClient.getCurrentAtSign();
 
+          //? Do I need to set the cache property here? Or because the key is "known" it doesn't need to be.
+
+          await atClient.put(statusAtKey, jsonEncode(leftMessage));
+
+          await atClient.notificationService.notify(
+            NotificationParams.forUpdate(statusAtKey, value: jsonEncode(leftMessage)),
+          );
+        }
+      }
+
+      // Remove from local state
+      _removeConversation(conversationId);
+
+      logger.info('Successfully left conversation $conversationId');
+    } catch (e, st) {
+      logger.severe('Error leaving conversation', e, st);
+      throw Exception('Error leaving conversation: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteConversation(String conversationId) async {
+    logger.fine('Deleting conversation $conversationId');
+    try {
+      final conversation = _getConversation(conversationId);
+      if (conversation == null) {
+        throw Exception('Conversation not found');
+      }
+
+      // Mark as left first
+      await leaveConversation(conversationId);
+
+      // Delete conversation and messages that exist only on owner's atserver
+      final currentAtSign = atClient.getCurrentAtSign();
+      if (conversation.createdBy == currentAtSign) {
+        final convRegex = RegExp('$kConvPrefix\\.$conversationId');
+
+        // Get all conversations keys (will only return keys for conversations started by the current atsign)
+        List<AtKey> conversationKeys = await atClient.getAtKeys(regex: convRegex.pattern, sharedBy: currentAtSign);
+
+        for (AtKey convKey in conversationKeys) {
           final success = await atClient.delete(convKey);
           if (success) {
-            logger.info('Successfully deleted conversation key: $convKey');
+            logger.fine('Successfully deleted conversation key: $convKey');
           } else {
             logger.warning('Failed to delete conversation key: $convKey');
           }
+        }
 
-          await atClient.notificationService.notify(
-            NotificationParams.forDelete(convKey),
-          );
+        // Delete all messages created by this user
+        final regex = RegExp('$kMsgPrefix\\.$conversationId');
+        List<AtKey> messageKeys = await atClient.getAtKeys(regex: regex.pattern, sharedBy: currentAtSign);
 
-          // Also delete all messages
-          final regex = RegExp(
-            '$kMsgPrefix\\.$conversationId',
-          );
-          List<AtKey> messageKeys = await atClient.getAtKeys(
-            regex: regex.pattern,
-          );
-
-          logger.fine('Message keys for deletion: $messageKeys');
-
-          for (AtKey msgKey in messageKeys) {
+        for (AtKey msgKey in messageKeys) {
+          if (msgKey.sharedBy == currentAtSign) {
             final success = await atClient.delete(msgKey);
             if (success) {
               logger.fine('Successfully deleted message key: $msgKey');
             } else {
               logger.warning('Failed to delete message key: $msgKey');
             }
-            await atClient.notificationService.notify(
-              NotificationParams.forDelete(msgKey),
-            );
           }
         }
+
+        // Remove from conversation index
+        await _removeFromConversationIndex(conversationId);
+
+        // Remove from archived index if present
+        await _updateArchivedIndex(conversationId, false);
       }
 
-      // Remove from conversation index
-      await _removeFromConversationIndex(conversationId);
-
-      // Remove from local state
-      _removeConversation(conversationId);
+      logger.info('Successfully deleted conversation $conversationId');
     } catch (e, st) {
       logger.severe('Error deleting conversation', e, st);
       throw Exception('Error deleting conversation: $e');
@@ -798,6 +940,12 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Send message to each participant (except ourselves)
       for (String participant in conversation.participants) {
         if (participant != atClient.getCurrentAtSign()) {
+          // Check if participant has left the conversation
+          if (await _hasParticipantLeft(conversationId, participant)) {
+            logger.info('Skipping message to $participant - they have left the conversation');
+            continue;
+          }
+
           // Convert to storage model
           Message storageMessage = _convertFromAppMessage(message, conversationId, participant);
 
@@ -857,7 +1005,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
       // Find the message
       final message = conversation.messages.firstWhereOrNull(
-        (m) => m.timestamp.millisecondsSinceEpoch.toString() == messageId,
+        (m) => m.id == messageId,
       );
 
       if (message == null) {
@@ -872,6 +1020,19 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Parse timestamp from messageId
       int timestamp = int.parse(messageId);
 
+      // Remove from local state
+      late final List<AppMessage> updatedMessages;
+      updatedMessages = List<AppMessage>.from(conversation.messages);
+      final messageIndex = updatedMessages.indexOf(message);
+      if (quietly) {
+        final _ = updatedMessages.removeAt(messageIndex);
+      } else {
+        final updatedMessage = message.copyWith(content: const DeletedContent());
+        updatedMessages[messageIndex] = updatedMessage;
+      }
+      final updatedConversation = conversation.copyWith(messages: updatedMessages);
+      _addOrUpdateConversation(updatedConversation);
+
       // Create message key
       String messageKey = '$kMsgPrefix.$conversationId.$timestamp';
 
@@ -884,25 +1045,39 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             ..sharedWith = participant
             ..sharedBy = atClient.getCurrentAtSign();
 
-          final success = await atClient.delete(msgKey);
-          if (success) {
-            logger.fine('Successfully deleted message key: $msgKey');
+          if (quietly) {
+            logger.fine('Deleting message key: $msgKey quietly');
+            final success = await atClient.delete(msgKey);
+            if (success) {
+              logger.fine('Successfully deleted message key: $msgKey');
+              await atClient.notificationService.notify(
+                NotificationParams.forDelete(msgKey),
+                // This means we wait for the notifications to reach "our" secondary but not "their" secondary
+                waitForFinalDeliveryStatus: false,
+              );
+            } else {
+              logger.warning('Failed to delete message key: $msgKey');
+            }
           } else {
-            logger.warning('Failed to delete message key: $msgKey');
+            logger.fine('Updating message key $msgKey with deletion status');
+            final updatedAppMessage = message.copyWith(content: const DeletedContent());
+            final updatedMessage = _convertFromAppMessage(updatedAppMessage, conversationId, participant);
+            final updatedMessageJson = jsonEncode(updatedMessage.toMap());
+            final success = await atClient.put(msgKey, updatedMessageJson);
+            if (success) {
+              logger.fine('Successfully updated message key: $msgKey');
+              await atClient.notificationService.notify(
+                NotificationParams.forUpdate(msgKey, value: updatedMessageJson),
+                waitForFinalDeliveryStatus: false,
+              );
+            } else {
+              logger.warning('Failed to update message key: $msgKey');
+            }
           }
-          await atClient.notificationService.notify(
-            NotificationParams.forDelete(msgKey),
-          );
         }
       }
-
-      // Remove from local state
-      final updatedMessages = List<AppMessage>.from(conversation.messages)
-        ..removeWhere((m) => m.timestamp.millisecondsSinceEpoch.toString() == messageId);
-
-      final updatedConversation = conversation.copyWith(messages: updatedMessages);
-      _addOrUpdateConversation(updatedConversation);
     } catch (e, st) {
+      // TODO: On failure, add message back to local state.
       logger.severe('Error deleting message', e, st);
       throw Exception('Error deleting message: $e');
     }
@@ -911,9 +1086,8 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   @override
   Future<void> dispose() async {
     logger.fine('Disposing app conversation repository');
-
-    _conversationNotificationSubscription?.cancel();
-    _messageNotificationSubscription?.cancel();
+    await _conversationNotificationSubscription?.cancel();
+    await _messageNotificationSubscription?.cancel();
     _periodicRefresh?.cancel();
     await _conversations.close();
   }

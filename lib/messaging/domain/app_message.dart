@@ -34,4 +34,6 @@ class AppMessage with AppMessageMappable implements Comparable<AppMessage> {
   int compareTo(AppMessage other) {
     return timestamp.compareTo(other.timestamp);
   }
+
+  String get id => timestamp.millisecondsSinceEpoch.toString();
 }

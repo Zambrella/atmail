@@ -59,6 +59,7 @@ class LoadedConversationState extends State<LoadedConversation> {
 
   @override
   Widget build(BuildContext context) {
+    // TODO: Lift this widget up to main conversation details screen
     return BlocListener<DeleteConversationCubit, DeleteConversationState>(
       listener: (context, state) {
         switch (state) {

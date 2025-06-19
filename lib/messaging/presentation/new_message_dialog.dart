@@ -13,11 +13,13 @@ class NewMessageDialog extends StatefulWidget {
 class NewMessageDialogState extends State<NewMessageDialog> {
   final _formKey = GlobalKey<FormState>();
   late final _recipientController = TextEditingController();
+  late final _subjectController = TextEditingController();
   late final _messageController = TextEditingController();
 
   @override
   void dispose() {
     _recipientController.dispose();
+    _subjectController.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -26,8 +28,9 @@ class NewMessageDialogState extends State<NewMessageDialog> {
     if (_formKey.currentState!.validate()) {
       // Basic validation passed
       final recipient = _recipientController.text.trim();
+      final subject = _subjectController.text.trim();
       final message = _messageController.text.trim();
-      context.read<NewConversationCubit>().createConversation([recipient], '', message);
+      context.read<NewConversationCubit>().createConversation([recipient], subject, message);
     }
   }
 
@@ -52,6 +55,23 @@ class NewMessageDialogState extends State<NewMessageDialog> {
               }
               if (value.trim().length < 2) {
                 return 'Recipient must be at least 2 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _subjectController,
+            decoration: const InputDecoration(
+              labelText: 'Subject',
+              hintText: 'Subject',
+              alignLabelWithHint: true,
+            ),
+            minLines: 1,
+            maxLines: 1,
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter a subject';
               }
               return null;
             },

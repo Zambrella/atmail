@@ -25,6 +25,9 @@ abstract interface class AppConversationRepository {
   /// Get a list of all conversations the user is part of.
   /// Updates the list of conversations when new conversations are created or deleted.
   /// When a new message is sent or received, the list of conversations is updated.
+  ///
+  /// Note: This will include archived conversations, it is up to the caller to filter them out
+  /// (though this may change in the future).
   Stream<List<AppConversation>> getConversations();
 
   /// Gets a list of all archived conversations the user is part of.
@@ -44,6 +47,7 @@ abstract interface class AppConversationRepository {
 
   /// Delete all reference to the conversation and messages that are stored on the atserver.
   /// Will also mark the conversation as left.
+  /// Does not mark messages shared to other users for deletion.
   Future<void> deleteConversation(String conversationId);
 
   /// Send a message to a conversation.
