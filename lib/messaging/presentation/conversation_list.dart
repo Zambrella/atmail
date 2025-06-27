@@ -1,5 +1,5 @@
 import 'package:atmail/messaging/blocs/conversation_bloc.dart';
-import 'package:atmail/router/router.dart';
+import 'package:atmail/messaging/presentation/conversation_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -36,17 +36,7 @@ class _ConversationListState extends State<ConversationList> {
             itemCount: conversations.length,
             itemBuilder: (context, index) {
               final conversation = conversations[index];
-              return ListTile(
-                title: Text(
-                  (conversation.isArchived ? '[Archived] ' : '') +
-                      (conversation.hasLeft ? '[Left] ' : '') +
-                      conversation.participants.join(', '),
-                ),
-                subtitle: Text(conversation.latestMessage?.toString() ?? 'No message'),
-                onTap: () {
-                  ConversationDetailsRoute(conversation.id).push(context);
-                },
-              );
+              return ConversationCard(conversation: conversation);
             },
           );
         }

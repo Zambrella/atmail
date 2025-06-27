@@ -1,6 +1,8 @@
 import 'package:atmail/messaging/domain/app_message.dart';
 import 'package:atmail/messaging/domain/message_content.dart';
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:intl/intl.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 part 'app_conversation.mapper.dart';
 
@@ -58,6 +60,21 @@ class AppConversation with AppConversationMappable implements Comparable<AppConv
   MessageContent? get latestMessage => messages.lastOrNull?.content;
 
   DateTime? get latestMessageDate => messages.lastOrNull?.timestamp;
+
+  /// Formats the date of the latest message.
+  /// Formats it as a relative date if it's within the last week,
+  /// otherwise formats it as a full date.
+  String? lastMessageDateFormatted() {
+    if (latestMessageDate == null) {
+      return null;
+    }
+    final difference = DateTime.now().difference(latestMessageDate!);
+    if (difference.inDays <= 7) {
+      return timeago.format(latestMessageDate!);
+    } else {
+      return DateFormat('MMM d, yyyy').format(latestMessageDate!);
+    }
+  }
 
   @override
   int compareTo(AppConversation other) {
