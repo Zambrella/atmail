@@ -38,7 +38,7 @@ Message deletion can either leave a sentinel message or completely remove the me
 
 
 ### Archiving conversations
-Archiving conversations is a way for users to signal they are not interested in the conversation so should not be loaded by default. This is just from the perspective of the user who is archiving the message and is different to "leaving" the conversation.
+Archiving conversations is a way for users to signal they are not interested in the conversation so should not be loaded by default. This is just from the perspective of the user who is archiving the message and is different to "leaving" the conversation. When a conversation is archived, an individual archive key (`conv.{conversationId}.archived`) is created containing the timestamp when the conversation was archived.
 
 ### Key Structure & Relationships
 #### 1. **Conversation Keys** (`conv.{conversationId}.{namespace}`)
@@ -49,29 +49,22 @@ Archiving conversations is a way for users to signal they are not interested in 
 - **Sharing**: Shared with all participants using `AtKey.shared()`
 - **Cache**: Set to `-1` with `ccd=false` to ensure data is always available
 
-#### 2. **Message Keys** (`msg.{conversationId}.{timestamp}.{namespace}`)
+#### 2. **Message Keys** (`conv.{conversationId}.msg.{timestamp}.{namespace}`)
 - **Purpose**: Store individual messages within conversations
-- **Structure**: `<@recipient>:msg.<conversationId>.<timestamp>.<namespace>@<sender>`
-- **Example**: `@alice:msg.uuid-1234.1679123456789.atmail@bob`
+- **Structure**: `<@recipient>:conv.<conversationId>.msg.<timestamp>.<namespace>@<sender>`
+- **Example**: `@alice:conv.uuid-1234.msg.1679123456789.atmail@bob`
 - **Contains**: Message content, sender, recipient, timestamp, metadata
 - **Sharing**: Shared with each participant individually
 - **Cache**: Set to `-1` with `ccd=true` so that recipients do not retain the message upon deletion
 
-#### 3. **Conversation Index Key** (`conv_index.{namespace}`)
-- **Purpose**: Maintain a list of all conversation IDs for quick discovery
-- **Structure**: `conv_index.<namespace>`
-- **Example**: `conv_index.atmail`
-- **Contains**: JSON array of conversation IDs
+#### 3. **Archive Keys** (`conv.{conversationId}.archived.{namespace}`)
+- **Purpose**: Track when a conversation was archived by the user
+- **Structure**: `conv.<conversationId>.archived.<namespace>`
+- **Example**: `conv.uuid-1234.archived.atmail`
+- **Contains**: ISO timestamp of when the conversation was archived
 - **Sharing**: Private to the user (not shared)
 
-#### 4. **Archived Index Key** (`conv_archived.{namespace}`)
-- **Purpose**: Track which conversations are archived
-- **Structure**: `conv_archived.<namespace>`
-- **Example**: `conv_archived.atmail`
-- **Contains**: JSON map of `{conversationId: archivedTimestamp}`
-- **Sharing**: Private to the user (not shared)
-
-#### 5. **Status Keys** (`status.{conversationId}.{namespace}`)
+#### 4. **Status Keys** (`status.{conversationId}.{namespace}`)
 - **Purpose**: Track participant status (e.g., left conversation)
 - **Structure**: `<@recipient>:status.<conversationId>.<namespace>@<sender>`
 - **Example**: `@bob:status.uuid-1234.atmail@alice`
@@ -91,12 +84,8 @@ Archiving conversations is a way for users to signal they are not interested in 
    - Store conversation metadata
    - Send notifications to all participants
 
-3. **Update Indices**
-   - Add conversation ID to `conv_index`
-   - Update local state
-
-4. **Send Initial Message**
-   - Create `msg` key with timestamp
+3. **Send Initial Message**
+   - Create message key with broad-to-specific pattern
    - Share with all participants
    - Track delivery status
 
@@ -119,7 +108,7 @@ The repository uses two notification streams:
    - Updates to existing conversations
    - Deletion events
 
-2. **Message Notifications** (`msg.*` pattern)
+2. **Message Notifications** (`conv.*.msg.*` pattern)
    - New messages in conversations
    - Message deletions
    - Real-time updates
@@ -132,7 +121,6 @@ The repository loads conversations from multiple sources:
 
 1. **Sent Conversations**: Keys where current user is the creator
 2. **Received Conversations**: Cached keys from other participants
-3. **Index-based Discovery**: Using the conversation index for comprehensive loading
 
 ### Deduplication
 
@@ -144,8 +132,8 @@ final key = '${message.timestamp.millisecondsSinceEpoch}_${message.sender}';
 ### Group Conversations
 
 For group conversations, the system:
-- Creates individual `conv` keys for each participant
-- Sends messages to all participants except the sender
+- Creates individual `conv.{conversationId}` keys for each participant
+- Sends messages using `conv.{conversationId}.msg.{timestamp}` pattern to all participants except the sender
 - Checks participant status before sending (skip if left)
 
 ## State Management
