@@ -1,8 +1,21 @@
+# atMail
+
 ## TODOs:
-- [ ] Add leave, archive and delete conversation options to the UI and test
-- [ ] Don’t use timestamp as a unique identifier in the key (2 messages sent at exactly the same time would overwrite each other)
-- [ ] Figure out how to handle knowing if a notification was sent between app restarts
-- [ ] Add a “priority” field that is both relevant form UX perspective and notification priority perspective
+- [x] Add leave, archive and delete conversation options to the UI
+- [x] Update keys to be broad -> specific (e.g. `conv.{{conversationId}}.msg.{{messageId}}`)
+- [x] Remove the use of indexes (for now)
+- [ ] Create baseline usable UI
+  - [ ] Create theme
+  - [ ] Translations
+- [ ] Add a “priority” field that is both relevant from a UX perspective and notification priority perspective
+
+## Ideas and future considerations:
+- [ ] Create message and conversation indexes to make fetching conversations more efficient. It can be a background process that the client runs. E.g. for messages, `conv.{{conversationId}}.msgIndex.1` contains the message Ids of the first 100 messages in the conversation with a timestamp for each message. This could then be iterated over to fetch the conversations or the start and end timestamps for regex-ing the messages.
+- [ ] Create an event log for conversations. Everyone can maintain their own copy and it can be used to track changes and updates to conversations.
+- [ ] Use immutable keys (new atsign feature) where possible.
+
+## Outstanding decisions:
+- [ ] Is the fork on change approach going to be transparent to the user? E.g. will the user see a new conversation as started or will it all be part of the same conversation chain?
 
 ## Why atmail exists
 atmail is a messaging service meant to be a hybrid between email and instant messaging:
@@ -12,7 +25,7 @@ atmail is a messaging service meant to be a hybrid between email and instant mes
 
 Initially, it is designed to be used by professionals and organisations adopting the atsign technology.
 
-atmail is build around "conversations" and can be thought of as analogous to their real-life counterparts. You are only privy to the conversations you start or are invited to. You don't know anything about the conversations you were not part of before hand. Conversations can also evolve over time and this is where the fork-on-change approach comes into play.
+atmail is built around "conversations" and can be thought of as analogous to their real-life counterparts. You are only privy to the conversations you start or are invited to. You don't know anything about the conversations you were not part of before hand. Conversations can also evolve over time and this is where the fork-on-change approach comes into play.
 
 ## Conversation Architecture
 atmail's conversation model addresses the atProtocol's single-owner constraint through an immutable conversation design with a fork-on-change approach. Rather than attempting distributed consensus for group state management, conversation metadata remains immutable after creation. When modifications are required—such as participant changes or metadata updates—the system creates a new conversation that references the previous one via `previous_conversation_id`, establishing clear lineage tracking.
@@ -26,11 +39,6 @@ Message deletion can either leave a sentinel message or completely remove the me
 
 ### Archiving conversations
 Archiving conversations is a way for users to signal they are not interested in the conversation so should not be loaded by default. This is just from the perspective of the user who is archiving the message and is different to "leaving" the conversation.
-
-## Future considerations
-- Adding time bucketing to keys for efficient retrieval of messages (i.e. prevent fetching ALL messages when loading conversations and messages). E.g. `conv.{conversationId}.{YYYY-MM}.{namespace}` and `msg.{conversationId}.{YYYY-MM}.{timestamp/messageId}.{namespace}`
-- Support for "blocking" atsigns because of the "opt-out" nature of conversations.
-
 
 ### Key Structure & Relationships
 #### 1. **Conversation Keys** (`conv.{conversationId}.{namespace}`)

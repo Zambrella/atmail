@@ -28,10 +28,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
   // Key prefixes
   static const String kConvPrefix = 'conv';
-  static const String kConvArchivedIndex = 'conv_archived';
-  static const String kConvIndexPrefix = 'conv_index';
   static const String kMsgPrefix = 'msg';
   static const String kStatusPrefix = 'status';
+  static const String kArchivedSuffix = 'archived';
 
   // Single source of truth for all conversations
   final BehaviorSubject<List<AppConversation>> _conversations = BehaviorSubject<List<AppConversation>>.seeded([]);
@@ -153,17 +152,13 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Future<bool> _isConversationArchived(String conversationId) async {
     try {
       AtKey archivedKey = AtKey()
-        ..key = kConvArchivedIndex
+        ..key = '$kConvPrefix.$conversationId.$kArchivedSuffix'
         ..namespace = namespace;
 
       AtValue existing = await atClient.get(archivedKey);
-      if (existing.value != null) {
-        Map<String, String> archivedData = Map<String, String>.from(jsonDecode(existing.value));
-        return archivedData.containsKey(conversationId);
-      }
-      return false;
+      return existing.value != null;
     } catch (e) {
-      // Index doesn't exist, not archived
+      // Key doesn't exist, not archived
       return false;
     }
   }
@@ -213,7 +208,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           AppConversation appConversation = await _convertToAppConversation(conversation, messages);
           _addOrUpdateConversation(appConversation);
         } else if (conversationId != null && notification.operation == 'delete') {
-          await _removeFromConversationIndex(conversationId);
           _removeConversation(conversationId);
         } else {
           logger.warning('Invalid conversation notification: $notification');
@@ -293,9 +287,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
       // Load conversations others have started with us
       await _loadReceivedConversations();
-
-      // Check conversation index
-      await _loadFromConversationIndex();
     } catch (e, st) {
       logger.severe('Error loading all conversations', e, st);
     }
@@ -365,62 +356,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     }
   }
 
-  Future<void> _loadFromConversationIndex() async {
-    logger.fine('Loading conversation index');
-    try {
-      final regex = RegExp(
-        '^(@${atClient.getCurrentAtSign()}:|cached:@${atClient.getCurrentAtSign()}:)$kConvIndexPrefix\\.$namespace@.*',
-      );
-      List<AtKey> indexKeys = await atClient.getAtKeys(
-        regex: regex.pattern,
-      );
-
-      for (AtKey indexKey in indexKeys) {
-        try {
-          AtValue indexValue = await atClient.get(indexKey);
-          if (indexValue.value != null) {
-            List<String> conversationIds = List<String>.from(jsonDecode(indexValue.value));
-
-            for (String convId in conversationIds) {
-              if (!_hasConversation(convId)) {
-                await _loadConversation(convId);
-              }
-            }
-          }
-        } catch (e, st) {
-          logger.severe('Error loading from index', e, st);
-        }
-      }
-    } catch (e, st) {
-      logger.severe('Error loading conversation indices', e, st);
-    }
-  }
-
-  Future<void> _loadConversation(String conversationId) async {
-    logger.fine('Loading conversation $conversationId');
-    try {
-      AtKey convKey = AtKey()
-        ..key = '$kConvPrefix.$conversationId'
-        ..namespace = namespace
-        ..sharedWith = atClient.getCurrentAtSign();
-
-      AtValue value = await atClient.get(convKey);
-      if (value.value != null) {
-        if (!_hasConversation(conversationId)) {
-          Conversation conversation = ConversationMapper.fromJson(value.value);
-
-          // Load messages for this conversation
-          List<AppMessage> messages = await _loadConversationMessages(conversationId);
-
-          AppConversation appConversation = await _convertToAppConversation(conversation, messages);
-          _addOrUpdateConversation(appConversation);
-        }
-      }
-    } catch (e, stackTrace) {
-      logger.severe('Error loading conversation $conversationId: $e', e, stackTrace);
-    }
-  }
-
   Future<List<AppMessage>> _loadConversationMessages(String conversationId) async {
     logger.fine('Loading messages for conversation: $conversationId');
 
@@ -454,7 +389,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     logger.fine('Loading sent messages for conversation: $conversationId');
 
     List<AppMessage> messages = [];
-    final regex = RegExp('$kMsgPrefix\\.$conversationId\\..*\\.$namespace');
+    final regex = RegExp('$kConvPrefix\\.$conversationId\\.$kMsgPrefix\\..*\\.$namespace');
     List<AtKey> sentKeys = await atClient.getAtKeys(
       regex: regex.pattern,
     );
@@ -463,7 +398,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       try {
         AtValue value = await atClient.get(key);
         if (value.value != null) {
-          print(value.value);
           Message message = MessageMapper.fromJson(value.value);
           messages.add(_convertToAppMessage(message));
         }
@@ -479,7 +413,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     logger.fine('Loading received messages for conversation: $conversationId');
 
     List<AppMessage> messages = [];
-    final regex = RegExp('cached:.*$kMsgPrefix\\.$conversationId\\..*\\.$namespace');
+    final regex = RegExp('cached:.*$kConvPrefix\\.$conversationId\\.$kMsgPrefix\\..*\\.$namespace');
     List<AtKey> receivedKeys = await atClient.getAtKeys(
       regex: regex.pattern,
     );
@@ -503,82 +437,22 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     await _loadReceivedConversations();
   }
 
-  Future<void> _updateConversationIndex(String conversationId) async {
-    logger.fine('Updating conversation $conversationId index');
-    try {
-      AtKey indexKey = AtKey()
-        ..key = kConvIndexPrefix
-        ..namespace = namespace
-        ..metadata = Metadata()
-        ..metadata.isPublic = false;
-
-      List<String> conversationIds = [];
-
-      try {
-        AtValue existing = await atClient.get(indexKey);
-        if (existing.value != null) {
-          conversationIds = List<String>.from(jsonDecode(existing.value));
-        }
-      } catch (e) {
-        // Index doesn't exist yet
-      }
-
-      if (!conversationIds.contains(conversationId)) {
-        conversationIds.add(conversationId);
-        await atClient.put(indexKey, jsonEncode(conversationIds));
-      }
-    } catch (e, st) {
-      logger.severe('Error updating conversation index', e, st);
-    }
-  }
-
-  Future<void> _removeFromConversationIndex(String conversationId) async {
-    logger.info('Removing conversation from index');
-    try {
-      AtKey indexKey = AtKey()
-        ..key = kConvIndexPrefix
-        ..namespace = namespace;
-
-      AtValue existing = await atClient.get(indexKey);
-      if (existing.value != null) {
-        List<String> conversationIds = List<String>.from(jsonDecode(existing.value));
-        conversationIds.remove(conversationId);
-        await atClient.put(indexKey, jsonEncode(conversationIds));
-      }
-    } catch (e, st) {
-      logger.warning('Error removing from conversation index', e, st);
-    }
-  }
-
-  Future<void> _updateArchivedIndex(String conversationId, bool isArchived) async {
-    logger.fine('Updating archived index for conversation $conversationId');
+  Future<void> _updateArchivedStatus(String conversationId, bool isArchived) async {
+    logger.fine('Updating archived status for conversation $conversationId');
     try {
       AtKey archivedKey = AtKey()
-        ..key = kConvArchivedIndex
+        ..key = '$kConvPrefix.$conversationId.$kArchivedSuffix'
         ..namespace = namespace
         ..metadata = Metadata()
         ..metadata.isPublic = false;
 
-      Map<String, String> archivedData = {};
-
-      try {
-        AtValue existing = await atClient.get(archivedKey);
-        if (existing.value != null) {
-          archivedData = Map<String, String>.from(jsonDecode(existing.value));
-        }
-      } catch (e) {
-        // Index doesn't exist yet
-      }
-
       if (isArchived) {
-        archivedData[conversationId] = DateTime.now().toIso8601String();
+        await atClient.put(archivedKey, DateTime.now().toIso8601String());
       } else {
-        archivedData.remove(conversationId);
+        await atClient.delete(archivedKey);
       }
-
-      await atClient.put(archivedKey, jsonEncode(archivedData));
     } catch (e, st) {
-      logger.severe('Error updating archived index', e, st);
+      logger.severe('Error updating archived status', e, st);
     }
   }
 
@@ -653,9 +527,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         await atClient.notificationService.notify(
           NotificationParams.forUpdate(convKey, value: jsonEncode(convData)),
         );
-
-        // Update local index
-        await _updateConversationIndex(conversationId);
 
         // Add to local state
         _addOrUpdateConversation(appConversation);
@@ -733,9 +604,6 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         );
       }
 
-      // Update local index
-      await _updateConversationIndex(conversationId);
-
       // Add to local state
       _addOrUpdateConversation(appConversation);
 
@@ -774,8 +642,8 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         throw Exception('Conversation not found');
       }
 
-      // Update archived index
-      await _updateArchivedIndex(conversationId, true);
+      // Update archived status
+      await _updateArchivedStatus(conversationId, true);
 
       // Update conversation in local state
       final archivedConversation = conversation.copyWith(isArchived: true);
@@ -797,8 +665,8 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         throw Exception('Conversation not found');
       }
 
-      // Update archived index
-      await _updateArchivedIndex(conversationId, false);
+      // Update archived status
+      await _updateArchivedStatus(conversationId, false);
 
       // Update conversation in local state
       final unarchivedConversation = conversation.copyWith(isArchived: false);
@@ -868,7 +736,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Delete conversation and messages that exist only on owner's atserver
       final currentAtSign = atClient.getCurrentAtSign();
       if (conversation.createdBy == currentAtSign) {
-        final convRegex = RegExp('$kConvPrefix\\.$conversationId');
+        final convRegex = RegExp('$kConvPrefix\\.$conversationId\\..*');
 
         // Get all conversations keys (will only return keys for conversations started by the current atsign)
         List<AtKey> conversationKeys = await atClient.getAtKeys(regex: convRegex.pattern, sharedBy: currentAtSign);
@@ -883,7 +751,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         }
 
         // Delete all messages created by this user
-        final regex = RegExp('$kMsgPrefix\\.$conversationId');
+        final regex = RegExp('$kConvPrefix\\.$conversationId\\.$kMsgPrefix');
         List<AtKey> messageKeys = await atClient.getAtKeys(regex: regex.pattern, sharedBy: currentAtSign);
 
         for (AtKey msgKey in messageKeys) {
@@ -897,11 +765,8 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           }
         }
 
-        // Remove from conversation index
-        await _removeFromConversationIndex(conversationId);
-
-        // Remove from archived index if present
-        await _updateArchivedIndex(conversationId, false);
+        // Remove archived status if present
+        await _updateArchivedStatus(conversationId, false);
       }
 
       logger.info('Successfully deleted conversation $conversationId');
@@ -934,7 +799,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       _addMessageToConversation(conversationId, message);
 
       // Create message key with timestamp for uniqueness
-      String messageKey = '$kMsgPrefix.$conversationId.${message.timestamp.millisecondsSinceEpoch}';
+      String messageKey = '$kConvPrefix.$conversationId.$kMsgPrefix.${message.timestamp.millisecondsSinceEpoch}';
 
       // Send message to each participant (except ourselves)
       for (String participant in conversation.participants) {
@@ -1033,7 +898,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       _addOrUpdateConversation(updatedConversation);
 
       // Create message key
-      String messageKey = '$kMsgPrefix.$conversationId.$timestamp';
+      String messageKey = '$kConvPrefix.$conversationId.$kMsgPrefix.$timestamp';
 
       // Delete message for each participant
       for (String participant in conversation.participants) {
