@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:atmail/router/router.dart';
+import 'package:atmail/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -22,6 +23,10 @@ class AppState extends State<App> {
     return MaterialApp.router(
       title: 'AtMail',
       routerConfig: router,
+      theme: AppTheme.lightThemeData,
+      darkTheme: AppTheme.darkThemeData,
+      themeMode: ThemeMode.system,
+      debugShowCheckedModeBanner: false,
       builder: (_, child) {
         // Wrap with inherited widgets if needed.
         return AppStartupWidget(
@@ -51,11 +56,33 @@ class AppDependencies {
 
 class AppStartupWidgetState extends State<AppStartupWidget> {
   late final Future<AppDependencies> _initialize;
+  late FormFactor formFactor;
 
   @override
   void initState() {
     super.initState();
     _initialize = _initialisation();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    formFactor = getFormFactor(context);
+  }
+
+  /// Helper method to get form factor based on width of device
+  static FormFactor getFormFactor(BuildContext context) {
+    final mediaQueryWidth = MediaQuery.of(context).size.width;
+
+    if (mediaQueryWidth <= FormFactor.mobile.breakpoint) {
+      return FormFactor.mobile;
+    } else if (mediaQueryWidth <= FormFactor.laptop.breakpoint) {
+      return FormFactor.tablet;
+    } else if (mediaQueryWidth <= FormFactor.desktop.breakpoint) {
+      return FormFactor.laptop;
+    } else {
+      return FormFactor.desktop;
+    }
   }
 
   Future<AppDependencies> _initialisation() async {
@@ -78,20 +105,25 @@ class AppStartupWidgetState extends State<AppStartupWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<AppDependencies>(
-      future: _initialize,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CircularProgressIndicator();
-        }
-        if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
-        }
-        return RepositoryProvider<AppDependencies>.value(
-          value: snapshot.data!,
-          child: widget.onLoaded(context),
-        );
-      },
+    return TextScaleFactorClamper(
+      child: FormFactorWidget(
+        formFactor: formFactor,
+        child: FutureBuilder<AppDependencies>(
+          future: _initialize,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            }
+            return RepositoryProvider<AppDependencies>.value(
+              value: snapshot.data!,
+              child: widget.onLoaded(context),
+            );
+          },
+        ),
+      ),
     );
   }
 }

@@ -1,0 +1,77 @@
+{
+  "playground_data": "Themes Playground data exported 27.06.2025 13:40:28",
+  "playground_version": "8.2.0",
+  "appBarStyleLight": {
+    "dart_type": "enum_flex_appbar_style",
+    "value": "scaffoldBackground"
+  },
+  "blendLevelLight": 0,
+  "blendLightOnColors": false,
+  "blendOnLevelLight": 0,
+  "customPrimaryDarkRef": {
+    "dart_type": "color",
+    "value": "FFF05E3E"
+  },
+  "customPrimaryLight": {
+    "dart_type": "color",
+    "value": "FFF05E3E"
+  },
+  "customPrimaryLightRef": {
+    "dart_type": "color",
+    "value": "FFF05E3E"
+  },
+  "defaultRadius": 8,
+  "dialogBackgroundLightSchemeColor": {
+    "dart_type": "enum_scheme_color",
+    "value": "surface"
+  },
+  "drawerBackgroundSchemeColor": {
+    "dart_type": "enum_scheme_color",
+    "value": "primary"
+  },
+  "floatingActionButtonAlwaysCircular": false,
+  "floatingActionButtonSchemeColor": {
+    "dart_type": "enum_scheme_color",
+    "value": "primary"
+  },
+  "floatingActionButtonUseShape": true,
+  "inputCursorLightSchemeColor": {
+    "dart_type": "enum_scheme_color",
+    "value": "primary"
+  },
+  "inputDecoratorBorderSchemeColorLight": {
+    "dart_type": "enum_scheme_color",
+    "value": "primary"
+  },
+  "inputDecoratorIsFilled": true,
+  "inputDecoratorSchemeColorLight": {
+    "dart_type": "enum_scheme_color",
+    "value": "surface"
+  },
+  "keepPrimary": true,
+  "keepPrimaryContainer": false,
+  "navigationBarBackgroundSchemeColor": {
+    "dart_type": "enum_scheme_color",
+    "value": "primary"
+  },
+  "navigationRailBackgroundSchemeColor": {
+    "dart_type": "enum_scheme_color",
+    "value": "primary"
+  },
+  "scaffoldLightIsWhite": false,
+  "schemeIndex": 69,
+  "showSchemeInputColors": true,
+  "simulatorComponentsIndex": 0,
+  "swapPrimaryAndSecondaryLightColors": false,
+  "themeMode": {
+    "dart_type": "enum_theme_mode",
+    "value": "light"
+  },
+  "topicIndexStartSide": 4,
+  "useAppFont": false,
+  "useFlexColorScheme": true,
+  "useKeyColors": true,
+  "useM2StyleDividerInM3": true,
+  "useSubThemes": true,
+  "verticalMode": true
+}
