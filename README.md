@@ -5,7 +5,7 @@
 - [x] Update keys to be broad -> specific (e.g. `conv.{{conversationId}}.msg.{{messageId}}`)
 - [x] Remove the use of indexes (for now)
 - [ ] Create baseline usable UI
-  - [ ] Create theme
+  - [x] Create theme
   - [ ] Translations
 - [ ] Add a “priority” field that is both relevant from a UX perspective and notification priority perspective
 

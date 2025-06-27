@@ -1,8 +1,8 @@
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
+import 'package:atmail/auth/presentation/onboarding_screen.dart';
 import 'package:atmail/contacts/presentation/contacts_list_page.dart';
 import 'package:atmail/messaging/presentation/conversation_list_page.dart';
 import 'package:atmail/messaging/presentation/conversation_details_page.dart';
-import 'package:atmail/onboarding/presentation/onboarding_screen.dart';
 import 'package:atmail/router/error_screen.dart';
 import 'package:atmail/router/home_shell_route.dart';
 import 'package:atmail/settings/presentation/settings_page.dart';
