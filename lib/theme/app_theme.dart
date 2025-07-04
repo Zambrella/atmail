@@ -121,7 +121,7 @@ class AppTheme {
   );
 
   static final ThemeData darkThemeData = _darkFlexThemeData.copyWith(
-    textTheme: _lightFlexThemeData.textTheme.apply(fontFamily: 'Poppins'),
+    textTheme: _darkFlexThemeData.textTheme.apply(fontFamily: 'Poppins'),
     extensions: <ThemeExtension<dynamic>>[
       const SpacingTheme(),
       const ModalTheme(),

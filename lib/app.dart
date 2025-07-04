@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:atmail/router/router.dart';
 import 'package:atmail/theme/theme.dart';
+import 'package:atmail/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -18,6 +19,29 @@ class App extends StatefulWidget {
 }
 
 class AppState extends State<App> {
+  late final ThemeCubit _themeCubit;
+  late final StreamSubscription _themeSubscription;
+
+  ThemeMode _themeMode = ThemeMode.system;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeCubit = ThemeCubit();
+    _themeSubscription = _themeCubit.stream.listen((theme) {
+      setState(() {
+        _themeMode = theme;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _themeSubscription.cancel();
+    _themeCubit.close();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
@@ -25,12 +49,15 @@ class AppState extends State<App> {
       routerConfig: router,
       theme: AppTheme.lightThemeData,
       darkTheme: AppTheme.darkThemeData,
-      themeMode: ThemeMode.system,
+      themeMode: _themeMode,
       debugShowCheckedModeBanner: false,
       builder: (_, child) {
         // Wrap with inherited widgets if needed.
-        return AppStartupWidget(
-          onLoaded: (_) => child!,
+        return BlocProvider.value(
+          value: _themeCubit,
+          child: AppStartupWidget(
+            onLoaded: (_) => child!,
+          ),
         );
       },
     );
