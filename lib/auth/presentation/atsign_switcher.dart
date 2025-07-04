@@ -1,4 +1,3 @@
-import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:atmail/app.dart';
 import 'package:atmail/auth/blocs/available_atsigns_cubit.dart';
@@ -173,7 +172,7 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
     return Card(
       key: _switcherKey,
       elevation: 0,
-      color: theme.colorScheme.secondaryContainer,
+      color: theme.colorScheme.primaryFixedDim,
       child: InkWell(
         onTap: _showDropdown,
         child: Padding(
@@ -183,14 +182,14 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
               Text(
                 atSign ?? '',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSecondaryContainer,
+                  color: theme.colorScheme.onPrimaryFixed,
                 ),
               ),
               SizedBox(width: theme.appSpacing.verySmall),
               Spacer(),
               Icon(
                 Icons.arrow_drop_down,
-                color: theme.colorScheme.onSecondaryContainer,
+                color: theme.colorScheme.onPrimaryFixed,
               ),
             ],
           ),

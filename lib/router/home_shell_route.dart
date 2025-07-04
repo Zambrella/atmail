@@ -194,7 +194,7 @@ class _NavigationItemState extends State<_NavigationItem> {
     return Container(
       margin: EdgeInsets.only(bottom: theme.appSpacing.small),
       child: Material(
-        color: widget.isSelected ? theme.colorScheme.primary.darken(20) : Colors.transparent,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(theme.appSpacing.small),
         child: InkWell(
           onTap: widget.onTap,
@@ -208,13 +208,14 @@ class _NavigationItemState extends State<_NavigationItem> {
               children: [
                 Icon(
                   icon,
-                  color: theme.colorScheme.onPrimary,
+                  color: widget.isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.primaryFixedDim,
                 ),
                 SizedBox(width: theme.appSpacing.small),
                 Text(
                   widget.title,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onPrimary,
+                    fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 Spacer(),
