@@ -58,7 +58,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     logger.fine('Setting up notification listeners');
 
     // Listen for conversation notifications
-    final conversationRegex = RegExp('$kConvPrefix\\..*\\.$namespace');
+    final conversationRegex = RegExp('$kConvPrefix\\.[^.]+\\.$namespace');
     _conversationNotificationSubscription = atClient.notificationService
         .subscribe(regex: conversationRegex.pattern, shouldDecrypt: true)
         .listen((notification) async {
@@ -67,7 +67,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         });
 
     // Listen for message notifications
-    final messageRegex = RegExp('$kMsgPrefix\\..*\\.$namespace');
+    final messageRegex = RegExp('$kConvPrefix\\.[^.]+\\.$kMsgPrefix\\..*\\.$namespace');
     _messageNotificationSubscription = atClient.notificationService
         .subscribe(regex: messageRegex.pattern, shouldDecrypt: true)
         .listen((notification) async {
@@ -258,7 +258,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   String? _extractConversationIdFromMessageKey(String key) {
     try {
       final parts = key.split('.');
-      if (parts.length >= 3 && parts[0].contains(kMsgPrefix)) {
+      if (parts.length >= 3 && parts[2].contains(kMsgPrefix)) {
         return parts[1]; // conversation ID is the second part
       }
     } catch (e, st) {
@@ -294,12 +294,12 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
   Future<void> _loadSentConversations() async {
     logger.fine('Loading sent conversations');
-    final regex = RegExp('$kConvPrefix\\..*\\.$namespace');
+    final regex = RegExp('$kConvPrefix\\.[^.]+\\.$namespace');
     List<AtKey> convKeys = await atClient.getAtKeys(
       regex: regex.pattern,
     );
 
-    logger.finer('Found ${convKeys.length} sent conversation keys');
+    logger.fine('Found ${convKeys.length} sent conversation keys');
 
     for (AtKey key in convKeys) {
       try {
@@ -326,7 +326,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
   Future<void> _loadReceivedConversations() async {
     logger.fine('Loading received conversations');
-    final regex = RegExp('cached:.*$kConvPrefix\\..*\\.$namespace');
+    final regex = RegExp('cached:.*$kConvPrefix\\.[^.]+\\.$namespace');
     List<AtKey> receivedKeys = await atClient.getAtKeys(
       regex: regex.pattern,
     );
@@ -422,6 +422,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       try {
         AtValue value = await atClient.get(key);
         if (value.value != null) {
+          print(value.value);
           Message message = MessageMapper.fromJson(value.value);
           messages.add(_convertToAppMessage(message));
         }

@@ -132,6 +132,7 @@ class LoadedConversationState extends State<LoadedConversation> {
           children: [
             Expanded(
               child: ListView.builder(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 itemCount: conversation.messages.length,
                 reverse: true,
                 itemBuilder: (context, index) {
@@ -191,6 +192,7 @@ class LoadedConversationState extends State<LoadedConversation> {
                       ),
                     ),
             ),
+            SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],
         ),
       ),

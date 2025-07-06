@@ -19,23 +19,9 @@ class HomeShellRoute extends StatelessWidget {
 
   final Widget child;
 
-  int getCurrentIndex(BuildContext context) {
-    final String location = GoRouterState.of(context).uri.path;
-    if (location.startsWith(ConversationsRoute().location)) {
-      return 0;
-    } else if (location.startsWith(ContactsListRoute().location)) {
-      return 1;
-    } else if (location.startsWith(SettingsRoute().location)) {
-      return 2;
-    } else {
-      return 0;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selectedIndex = getCurrentIndex(context);
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider<AppConversationRepository>(
@@ -63,94 +49,14 @@ class HomeShellRoute extends StatelessWidget {
                 return Scaffold(
                   body: Row(
                     children: [
-                      Container(
-                        width: 250,
-                        padding: EdgeInsets.all(theme.appSpacing.small),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary,
+                      if (!FormFactorWidget.of(context).showDrawer)
+                        Container(
+                          width: 250,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                          ),
+                          child: NavBar(),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'atMail',
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                color: theme.colorScheme.onPrimary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            SizedBox(height: theme.appSpacing.small),
-                            BlocProvider(
-                              create: (context) => AvailableAtsignsCubit(
-                                context.read<AuthRepository>(),
-                              )..fetchAvailableAtsigns(),
-                              child: AtsignSwitcher(),
-                            ),
-                            SizedBox(height: theme.appSpacing.medium),
-                            FilledButton(
-                              onPressed: () async {
-                                await showDialog<void>(
-                                  context: context,
-                                  builder: (dialogContext) {
-                                    return BlocProvider.value(
-                                      value: context.read<NewConversationCubit>(),
-                                      child: NewMessageDialog(),
-                                    );
-                                  },
-                                );
-                              },
-                              style: theme.filledButtonTheme.style?.copyWith(
-                                backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary.darken(20)),
-                              ),
-                              child: Text('New Conversation'),
-                            ),
-                            SizedBox(height: theme.appSpacing.medium),
-                            _NavigationItem(
-                              key: ValueKey('conversations'),
-                              title: 'Conversations',
-                              selectedIcon: Icons.message,
-                              unselectedIcon: Icons.message_outlined,
-                              // TODO: Replace with actual count
-                              iconCount: 3,
-                              onTap: () {
-                                ConversationsRoute().go(context);
-                              },
-                              isSelected: selectedIndex == 0,
-                            ),
-                            _NavigationItem(
-                              key: ValueKey('contacts'),
-                              title: 'Contacts',
-                              selectedIcon: Icons.people,
-                              unselectedIcon: Icons.people_outline,
-                              onTap: () {
-                                ContactsListRoute().go(context);
-                              },
-                              isSelected: selectedIndex == 1,
-                            ),
-                            _NavigationItem(
-                              key: ValueKey('settings'),
-                              title: 'Settings',
-                              selectedIcon: Icons.settings,
-                              unselectedIcon: Icons.settings_outlined,
-                              onTap: () {
-                                SettingsRoute().go(context);
-                              },
-                              isSelected: selectedIndex == 2,
-                            ),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.bottomCenter,
-                                child: Text(
-                                  'You have 20MB of storage left',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       Expanded(child: child),
                     ],
                   ),
@@ -159,6 +65,122 @@ class HomeShellRoute extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class NavBar extends StatefulWidget {
+  const NavBar({
+    super.key,
+  });
+
+  @override
+  State<NavBar> createState() => _NavBarState();
+}
+
+class _NavBarState extends State<NavBar> {
+  int getCurrentIndex(BuildContext context) {
+    final String location = GoRouterState.of(context).uri.path;
+    if (location.startsWith(ConversationsRoute().location)) {
+      return 0;
+    } else if (location.startsWith(ContactsListRoute().location)) {
+      return 1;
+    } else if (location.startsWith(SettingsRoute().location)) {
+      return 2;
+    } else {
+      return 0;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedIndex = getCurrentIndex(context);
+    final theme = Theme.of(context);
+    return Padding(
+      padding: EdgeInsets.all(theme.appSpacing.small),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(height: MediaQuery.of(context).padding.top),
+          Text(
+            'atMail',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: theme.colorScheme.onPrimary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: theme.appSpacing.small),
+          BlocProvider(
+            create: (context) => AvailableAtsignsCubit(
+              context.read<AuthRepository>(),
+            )..fetchAvailableAtsigns(),
+            child: AtsignSwitcher(),
+          ),
+          SizedBox(height: theme.appSpacing.medium),
+          FilledButton(
+            onPressed: () async {
+              await showDialog<void>(
+                context: context,
+                builder: (dialogContext) {
+                  return BlocProvider.value(
+                    value: context.read<NewConversationCubit>(),
+                    child: NewMessageDialog(),
+                  );
+                },
+              );
+            },
+            style: theme.filledButtonTheme.style?.copyWith(
+              backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primary.darken(20)),
+            ),
+            child: Text('New Conversation'),
+          ),
+          SizedBox(height: theme.appSpacing.medium),
+          _NavigationItem(
+            key: ValueKey('conversations'),
+            title: 'Conversations',
+            selectedIcon: Icons.message,
+            unselectedIcon: Icons.message_outlined,
+            // TODO: Replace with actual count
+            iconCount: 3,
+            onTap: () {
+              ConversationsRoute().go(context);
+            },
+            isSelected: selectedIndex == 0,
+          ),
+          _NavigationItem(
+            key: ValueKey('contacts'),
+            title: 'Contacts',
+            selectedIcon: Icons.people,
+            unselectedIcon: Icons.people_outline,
+            onTap: () {
+              ContactsListRoute().go(context);
+            },
+            isSelected: selectedIndex == 1,
+          ),
+          _NavigationItem(
+            key: ValueKey('settings'),
+            title: 'Settings',
+            selectedIcon: Icons.settings,
+            unselectedIcon: Icons.settings_outlined,
+            onTap: () {
+              SettingsRoute().go(context);
+            },
+            isSelected: selectedIndex == 2,
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Text(
+                'You have 20MB of storage left',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
       ),
     );
   }

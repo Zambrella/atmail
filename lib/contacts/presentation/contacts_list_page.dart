@@ -1,3 +1,5 @@
+import 'package:atmail/router/home_shell_route.dart';
+import 'package:atmail/theme/form_factor.dart';
 import 'package:flutter/material.dart';
 
 class ContactsListPage extends StatefulWidget {
@@ -13,6 +15,11 @@ class ContactsListPageState extends State<ContactsListPage> {
       appBar: AppBar(
         title: Text('Contacts'),
       ),
+      drawer: (FormFactorWidget.of(context).showDrawer)
+          ? Drawer(
+              child: NavBar(),
+            )
+          : null,
     );
   }
 }

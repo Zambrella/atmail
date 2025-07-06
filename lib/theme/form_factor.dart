@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 /// The size of the device running the app
@@ -21,6 +23,7 @@ enum FormFactor {
 
 extension FormFactorExtension on FormFactor {
   bool get isLarge => this == FormFactor.laptop || this == FormFactor.desktop;
+  bool get showDrawer => !(isLarge || Platform.isMacOS || Platform.isWindows || Platform.isLinux);
 }
 
 class FormFactorWidget extends InheritedWidget {
@@ -33,9 +36,7 @@ class FormFactorWidget extends InheritedWidget {
   final FormFactor formFactor;
 
   static FormFactor? maybeOf(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<FormFactorWidget>()
-        ?.formFactor;
+    return context.dependOnInheritedWidgetOfExactType<FormFactorWidget>()?.formFactor;
   }
 
   static FormFactor of(BuildContext context) {
@@ -45,6 +46,5 @@ class FormFactorWidget extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(FormFactorWidget oldWidget) =>
-      formFactor != oldWidget.formFactor;
+  bool updateShouldNotify(FormFactorWidget oldWidget) => formFactor != oldWidget.formFactor;
 }

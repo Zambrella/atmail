@@ -28,6 +28,7 @@ class ConversationCardState extends State<ConversationCard> {
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
+              width: 0.5,
               color: theme.colorScheme.outline,
             ),
           ),

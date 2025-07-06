@@ -1,4 +1,6 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:atmail/router/home_shell_route.dart';
+import 'package:atmail/theme/form_factor.dart';
 import 'package:atmail/theme/theme_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,6 +18,11 @@ class SettingsPageState extends State<SettingsPage> {
       appBar: AppBar(
         title: Text('Settings'),
       ),
+      drawer: (FormFactorWidget.of(context).showDrawer)
+          ? Drawer(
+              child: NavBar(),
+            )
+          : null,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
