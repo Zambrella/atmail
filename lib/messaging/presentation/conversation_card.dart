@@ -48,7 +48,12 @@ class ConversationCardState extends State<ConversationCard> {
                 children: [
                   Text(conversation.subject, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
                   switch (conversation.latestMessage) {
-                    TextContent(:final text) => Text(text, style: theme.textTheme.bodyMedium),
+                    TextContent(:final text) => Text(
+                      text,
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     _ => SizedBox.shrink(),
                   },
                 ],
@@ -56,6 +61,7 @@ class ConversationCardState extends State<ConversationCard> {
             ),
             SizedBox(width: theme.appSpacing.medium),
             if (conversation.latestMessageDate != null)
+              // TODO: Setup a timer to refresh the last message date.
               Expanded(
                 child: Text(
                   conversation.lastMessageDateFormatted()!,

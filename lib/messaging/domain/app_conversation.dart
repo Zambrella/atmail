@@ -55,11 +55,11 @@ class AppConversation with AppConversationMappable implements Comparable<AppConv
   /// TODO: Update with examples.
   final Map<String, dynamic> metadata;
 
-  String? get latestMessageSender => messages.lastOrNull?.sender;
+  String? get latestMessageSender => messages.firstOrNull?.sender;
 
-  MessageContent? get latestMessage => messages.lastOrNull?.content;
+  MessageContent? get latestMessage => messages.firstOrNull?.content;
 
-  DateTime? get latestMessageDate => messages.lastOrNull?.timestamp;
+  DateTime? get latestMessageDate => messages.firstOrNull?.timestamp;
 
   /// Formats the date of the latest message.
   /// Formats it as a relative date if it's within the last week,

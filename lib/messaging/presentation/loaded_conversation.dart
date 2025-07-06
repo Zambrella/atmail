@@ -70,7 +70,7 @@ class LoadedConversationState extends State<LoadedConversation> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Lift this widget up to main conversation details screen
+    final theme = Theme.of(context);
     return BlocListener<DeleteConversationCubit, DeleteConversationState>(
       listener: (context, state) {
         switch (state) {
@@ -86,26 +86,43 @@ class LoadedConversationState extends State<LoadedConversation> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            conversation.participants.join(', '),
+          centerTitle: false,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                conversation.subject,
+                style: theme.textTheme.headlineSmall,
+              ),
+              Text(
+                conversation.participants.join(', '),
+                style: theme.textTheme.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
           actions: [
             IconButton(
+              tooltip: 'Delete Conversation',
               icon: Icon(Icons.delete),
               onPressed: _deleteConversation,
             ),
             if (!conversation.hasLeft)
               IconButton(
+                tooltip: 'Leave Conversation',
                 icon: Icon(Icons.exit_to_app),
                 onPressed: _leaveConversation,
               ),
             if (!conversation.isArchived)
               IconButton(
+                tooltip: 'Archive Conversation',
                 icon: Icon(Icons.archive),
                 onPressed: _archiveConversation,
               ),
             if (conversation.isArchived)
               IconButton(
+                tooltip: 'Unarchive Conversation',
                 icon: Icon(Icons.unarchive),
                 onPressed: _unarchiveConversation,
               ),
@@ -116,6 +133,7 @@ class LoadedConversationState extends State<LoadedConversation> {
             Expanded(
               child: ListView.builder(
                 itemCount: conversation.messages.length,
+                reverse: true,
                 itemBuilder: (context, index) {
                   final message = conversation.messages[index];
                   return MessageCard(
@@ -140,12 +158,12 @@ class LoadedConversationState extends State<LoadedConversation> {
                   : Form(
                       key: _formKey,
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Expanded(
                             child: TextFormField(
                               controller: _messageController,
-                              maxLines: null,
+                              maxLines: 5,
                               minLines: 1,
                               textInputAction: TextInputAction.newline,
                               decoration: const InputDecoration(
