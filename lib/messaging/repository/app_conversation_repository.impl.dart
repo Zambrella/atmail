@@ -13,7 +13,7 @@ import 'package:rxdart/rxdart.dart';
 import 'package:uuid/uuid.dart';
 import 'package:collection/collection.dart';
 
-final logger = Logger('AppConversationRepositoryImpl');
+final _log = Logger('AppConversationRepositoryImpl');
 
 class AppConversationRepositoryImpl implements AppConversationRepository {
   AppConversationRepositoryImpl({
@@ -40,7 +40,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   Timer? _periodicRefresh;
 
   void _initialize() {
-    logger.fine('Initializing app conversation repository');
+    _log.fine('Initializing app conversation repository');
 
     // Listen for real-time notifications
     _startNotificationListeners();
@@ -55,14 +55,14 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   }
 
   void _startNotificationListeners() {
-    logger.fine('Setting up notification listeners');
+    _log.fine('Setting up notification listeners');
 
     // Listen for conversation notifications
     final conversationRegex = RegExp('$kConvPrefix\\.[^.]+\\.$namespace');
     _conversationNotificationSubscription = atClient.notificationService
         .subscribe(regex: conversationRegex.pattern, shouldDecrypt: true)
         .listen((notification) async {
-          logger.fine('Received conversation notification: $notification');
+          _log.fine('Received conversation notification: $notification');
           await _handleConversationNotification(notification);
         });
 
@@ -71,7 +71,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     _messageNotificationSubscription = atClient.notificationService
         .subscribe(regex: messageRegex.pattern, shouldDecrypt: true)
         .listen((notification) async {
-          logger.fine('Received message notification: $notification');
+          _log.fine('Received message notification: $notification');
           await _handleMessageNotification(notification);
         });
   }
@@ -126,7 +126,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       current.sort(); // Re-sort conversations
       _conversations.add(current);
     } else {
-      logger.warning('Conversation with ID $conversationId not found');
+      _log.warning('Conversation with ID $conversationId not found');
     }
   }
 
@@ -210,11 +210,11 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         } else if (conversationId != null && notification.operation == 'delete') {
           _removeConversation(conversationId);
         } else {
-          logger.warning('Invalid conversation notification: $notification');
+          _log.warning('Invalid conversation notification: $notification');
         }
       }
     } catch (e, st) {
-      logger.severe('Error handling conversation notification', e, st);
+      _log.severe('Error handling conversation notification', e, st);
     }
   }
 
@@ -235,11 +235,11 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           final updatedConversation = conversation.copyWith(messages: updatedMessages);
           _addOrUpdateConversation(updatedConversation);
         } else {
-          logger.warning('Invalid message notification: $notification');
+          _log.warning('Invalid message notification: $notification');
         }
       }
     } catch (e, st) {
-      logger.severe('Error handling message notification', e, st);
+      _log.severe('Error handling message notification', e, st);
     }
   }
 
@@ -250,7 +250,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         return parts[1];
       }
     } catch (e, st) {
-      logger.severe('Error extracting conversation ID', e, st);
+      _log.severe('Error extracting conversation ID', e, st);
     }
     return null;
   }
@@ -262,7 +262,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         return parts[1]; // conversation ID is the second part
       }
     } catch (e, st) {
-      logger.severe('Error extracting conversation ID from message key: $key', e, st);
+      _log.severe('Error extracting conversation ID from message key: $key', e, st);
     }
     return null;
   }
@@ -274,13 +274,13 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         return parts[2]; // message ID is the third part
       }
     } catch (e, st) {
-      logger.severe('Error extracting messageID from message key: $key', e, st);
+      _log.severe('Error extracting messageID from message key: $key', e, st);
     }
     return null;
   }
 
   Future<void> _loadAllConversations() async {
-    logger.fine('Loading all conversations');
+    _log.fine('Loading all conversations');
     try {
       // Load conversations we've created
       await _loadSentConversations();
@@ -288,18 +288,18 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Load conversations others have started with us
       await _loadReceivedConversations();
     } catch (e, st) {
-      logger.severe('Error loading all conversations', e, st);
+      _log.severe('Error loading all conversations', e, st);
     }
   }
 
   Future<void> _loadSentConversations() async {
-    logger.fine('Loading sent conversations');
+    _log.fine('Loading sent conversations');
     final regex = RegExp('$kConvPrefix\\.[^.]+\\.$namespace');
     List<AtKey> convKeys = await atClient.getAtKeys(
       regex: regex.pattern,
     );
 
-    logger.fine('Found ${convKeys.length} sent conversation keys');
+    _log.fine('Found ${convKeys.length} sent conversation keys');
 
     for (AtKey key in convKeys) {
       try {
@@ -315,23 +315,23 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             AppConversation appConversation = await _convertToAppConversation(conversation, messages);
             _addOrUpdateConversation(appConversation);
 
-            logger.fine('Loaded sent conversation: $conversationId');
+            _log.fine('Loaded sent conversation: $conversationId');
           }
         }
       } catch (e, st) {
-        logger.severe('Error loading sent conversation', e, st);
+        _log.severe('Error loading sent conversation', e, st);
       }
     }
   }
 
   Future<void> _loadReceivedConversations() async {
-    logger.fine('Loading received conversations');
+    _log.fine('Loading received conversations');
     final regex = RegExp('cached:.*$kConvPrefix\\.[^.]+\\.$namespace');
     List<AtKey> receivedKeys = await atClient.getAtKeys(
       regex: regex.pattern,
     );
 
-    logger.finer('Found ${receivedKeys.length} received conversation keys');
+    _log.finer('Found ${receivedKeys.length} received conversation keys');
 
     for (AtKey key in receivedKeys) {
       try {
@@ -347,17 +347,17 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             AppConversation appConversation = await _convertToAppConversation(conversation, messages);
             _addOrUpdateConversation(appConversation);
 
-            logger.fine('Loaded received conversation: $conversationId');
+            _log.fine('Loaded received conversation: $conversationId');
           }
         }
       } catch (e, st) {
-        logger.severe('Error loading received conversation', e, st);
+        _log.severe('Error loading received conversation', e, st);
       }
     }
   }
 
   Future<List<AppMessage>> _loadConversationMessages(String conversationId) async {
-    logger.fine('Loading messages for conversation: $conversationId');
+    _log.fine('Loading messages for conversation: $conversationId');
 
     List<AppMessage> messages = [];
 
@@ -380,13 +380,13 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
       return uniqueMessages.values.toList()..sort();
     } catch (e, st) {
-      logger.severe('Error loading conversation messages', e, st);
+      _log.severe('Error loading conversation messages', e, st);
       return [];
     }
   }
 
   Future<List<AppMessage>> _loadSentMessages(String conversationId) async {
-    logger.fine('Loading sent messages for conversation: $conversationId');
+    _log.fine('Loading sent messages for conversation: $conversationId');
 
     List<AppMessage> messages = [];
     final regex = RegExp('$kConvPrefix\\.$conversationId\\.$kMsgPrefix\\..*\\.$namespace');
@@ -402,7 +402,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           messages.add(_convertToAppMessage(message));
         }
       } catch (e, st) {
-        logger.severe('Error loading sent message', e, st);
+        _log.severe('Error loading sent message', e, st);
       }
     }
 
@@ -410,7 +410,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   }
 
   Future<List<AppMessage>> _loadReceivedMessages(String conversationId) async {
-    logger.fine('Loading received messages for conversation: $conversationId');
+    _log.fine('Loading received messages for conversation: $conversationId');
 
     List<AppMessage> messages = [];
     final regex = RegExp('cached:.*$kConvPrefix\\.$conversationId\\.$kMsgPrefix\\..*\\.$namespace');
@@ -422,12 +422,11 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       try {
         AtValue value = await atClient.get(key);
         if (value.value != null) {
-          print(value.value);
           Message message = MessageMapper.fromJson(value.value);
           messages.add(_convertToAppMessage(message));
         }
       } catch (e, st) {
-        logger.severe('Error loading received message', e, st);
+        _log.severe('Error loading received message', e, st);
       }
     }
 
@@ -439,7 +438,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
   }
 
   Future<void> _updateArchivedStatus(String conversationId, bool isArchived) async {
-    logger.fine('Updating archived status for conversation $conversationId');
+    _log.fine('Updating archived status for conversation $conversationId');
     try {
       AtKey archivedKey = AtKey()
         ..key = '$kConvPrefix.$conversationId.$kArchivedSuffix'
@@ -453,7 +452,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         await atClient.delete(archivedKey);
       }
     } catch (e, st) {
-      logger.severe('Error updating archived status', e, st);
+      _log.severe('Error updating archived status', e, st);
     }
   }
 
@@ -486,7 +485,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     Map<String, dynamic>? metadata,
   }) async {
     try {
-      logger.fine('Starting conversation with $withAtSign');
+      _log.fine('Starting conversation with $withAtSign');
 
       String conversationId = Uuid().v4();
       DateTime now = DateTime.now();
@@ -521,7 +520,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       // Store conversation data
       bool stored = await atClient.put(convKey, jsonEncode(convData));
 
-      logger.fine('Conversation stored using key: $convKey. Conversation data: $convData');
+      _log.fine('Conversation stored using key: $convKey. Conversation data: $convData');
 
       if (stored) {
         // Send notification
@@ -543,7 +542,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         throw Exception('Failed to create conversation');
       }
     } catch (e, st) {
-      logger.severe('Error starting conversation', e, st);
+      _log.severe('Error starting conversation', e, st);
       throw Exception('Error starting conversation: $e');
     }
   }
@@ -556,7 +555,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     String? groupName,
     Map<String, dynamic>? metadata,
   }) async {
-    logger.fine('Starting group conversation with $withAtSigns');
+    _log.fine('Starting group conversation with $withAtSigns');
     try {
       String conversationId = Uuid().v4();
       DateTime now = DateTime.now();
@@ -616,7 +615,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
       return appConversation;
     } catch (e, st) {
-      logger.severe('Error starting group conversation', e, st);
+      _log.severe('Error starting group conversation', e, st);
       throw Exception('Error starting group conversation: $e');
     }
   }
@@ -629,14 +628,14 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
 
   @override
   Future<List<AppConversation>> getArchivedConversations() async {
-    logger.fine('Getting archived conversations');
+    _log.fine('Getting archived conversations');
     final currentConversations = _conversations.value;
     return currentConversations.where((conversation) => conversation.isArchived).toList();
   }
 
   @override
   Future<void> archiveConversation(String conversationId) async {
-    logger.fine('Archiving conversation $conversationId');
+    _log.fine('Archiving conversation $conversationId');
     try {
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
@@ -650,16 +649,16 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       final archivedConversation = conversation.copyWith(isArchived: true);
       _addOrUpdateConversation(archivedConversation);
 
-      logger.info('Successfully archived conversation $conversationId');
+      _log.info('Successfully archived conversation $conversationId');
     } catch (e, st) {
-      logger.severe('Error archiving conversation', e, st);
+      _log.severe('Error archiving conversation', e, st);
       throw Exception('Error archiving conversation: $e');
     }
   }
 
   @override
   Future<void> unarchiveConversation(String conversationId) async {
-    logger.fine('Unarchiving conversation $conversationId');
+    _log.fine('Unarchiving conversation $conversationId');
     try {
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
@@ -673,16 +672,16 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       final unarchivedConversation = conversation.copyWith(isArchived: false);
       _addOrUpdateConversation(unarchivedConversation);
 
-      logger.info('Successfully unarchived conversation $conversationId');
+      _log.info('Successfully unarchived conversation $conversationId');
     } catch (e, st) {
-      logger.severe('Error unarchiving conversation', e, st);
+      _log.severe('Error unarchiving conversation', e, st);
       throw Exception('Error unarchiving conversation: $e');
     }
   }
 
   @override
   Future<void> leaveConversation(String conversationId) async {
-    logger.fine('Leaving conversation $conversationId');
+    _log.fine('Leaving conversation $conversationId');
     try {
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
@@ -715,16 +714,16 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
       final updatedConversation = conversation.copyWith(hasLeft: true);
       _addOrUpdateConversation(updatedConversation);
 
-      logger.info('Successfully left conversation $conversationId');
+      _log.info('Successfully left conversation $conversationId');
     } catch (e, st) {
-      logger.severe('Error leaving conversation', e, st);
+      _log.severe('Error leaving conversation', e, st);
       throw Exception('Error leaving conversation: $e');
     }
   }
 
   @override
   Future<void> deleteConversation(String conversationId) async {
-    logger.fine('Deleting conversation $conversationId');
+    _log.fine('Deleting conversation $conversationId');
     try {
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
@@ -745,9 +744,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         for (AtKey convKey in conversationKeys) {
           final success = await atClient.delete(convKey);
           if (success) {
-            logger.fine('Successfully deleted conversation key: $convKey');
+            _log.fine('Successfully deleted conversation key: $convKey');
           } else {
-            logger.warning('Failed to delete conversation key: $convKey');
+            _log.warning('Failed to delete conversation key: $convKey');
           }
         }
 
@@ -759,9 +758,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           if (msgKey.sharedBy == currentAtSign) {
             final success = await atClient.delete(msgKey);
             if (success) {
-              logger.fine('Successfully deleted message key: $msgKey');
+              _log.fine('Successfully deleted message key: $msgKey');
             } else {
-              logger.warning('Failed to delete message key: $msgKey');
+              _log.warning('Failed to delete message key: $msgKey');
             }
           }
         }
@@ -770,9 +769,9 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         await _updateArchivedStatus(conversationId, false);
       }
 
-      logger.info('Successfully deleted conversation $conversationId');
+      _log.info('Successfully deleted conversation $conversationId');
     } catch (e, st) {
-      logger.severe('Error deleting conversation', e, st);
+      _log.severe('Error deleting conversation', e, st);
       throw Exception('Error deleting conversation: $e');
     }
   }
@@ -790,7 +789,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     );
 
     try {
-      logger.fine('Sending message to conversation: $conversationId');
+      _log.fine('Sending message to conversation: $conversationId');
 
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
@@ -807,7 +806,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
         if (participant != atClient.getCurrentAtSign()) {
           // Check if participant has left the conversation
           if (await _hasParticipantLeft(conversationId, participant)) {
-            logger.info('Skipping message to $participant - they have left the conversation');
+            _log.info('Skipping message to $participant - they have left the conversation');
             continue;
           }
 
@@ -833,7 +832,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
               NotificationParams.forUpdate(msgKey, value: jsonEncode(storageMessage.toMap())),
             );
             _addMessageToConversation(conversationId, message.copyWith(status: MessageStatusDelivered()));
-            logger.info('Message sent to $participant');
+            _log.info('Message sent to $participant');
           }
         }
       }
@@ -849,7 +848,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
           ),
         ),
       );
-      logger.severe('Error sending message', e, st);
+      _log.severe('Error sending message', e, st);
       throw Exception('Error sending message: $e');
     }
   }
@@ -861,7 +860,7 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
     bool quietly = false,
   }) async {
     try {
-      logger.fine('Deleting message: $messageId from conversation: $conversationId');
+      _log.fine('Deleting message: $messageId from conversation: $conversationId');
 
       final conversation = _getConversation(conversationId);
       if (conversation == null) {
@@ -911,46 +910,46 @@ class AppConversationRepositoryImpl implements AppConversationRepository {
             ..sharedBy = atClient.getCurrentAtSign();
 
           if (quietly) {
-            logger.fine('Deleting message key: $msgKey quietly');
+            _log.fine('Deleting message key: $msgKey quietly');
             final success = await atClient.delete(msgKey);
             if (success) {
-              logger.fine('Successfully deleted message key: $msgKey');
+              _log.fine('Successfully deleted message key: $msgKey');
               await atClient.notificationService.notify(
                 NotificationParams.forDelete(msgKey),
                 // This means we wait for the notifications to reach "our" secondary but not "their" secondary
                 waitForFinalDeliveryStatus: false,
               );
             } else {
-              logger.warning('Failed to delete message key: $msgKey');
+              _log.warning('Failed to delete message key: $msgKey');
             }
           } else {
-            logger.fine('Updating message key $msgKey with deletion status');
+            _log.fine('Updating message key $msgKey with deletion status');
             final updatedAppMessage = message.copyWith(content: const DeletedContent());
             final updatedMessage = _convertFromAppMessage(updatedAppMessage, conversationId, participant);
             final updatedMessageJson = jsonEncode(updatedMessage.toMap());
             final success = await atClient.put(msgKey, updatedMessageJson);
             if (success) {
-              logger.fine('Successfully updated message key: $msgKey');
+              _log.fine('Successfully updated message key: $msgKey');
               await atClient.notificationService.notify(
                 NotificationParams.forUpdate(msgKey, value: updatedMessageJson),
                 waitForFinalDeliveryStatus: false,
               );
             } else {
-              logger.warning('Failed to update message key: $msgKey');
+              _log.warning('Failed to update message key: $msgKey');
             }
           }
         }
       }
     } catch (e, st) {
       // TODO: On failure, add message back to local state.
-      logger.severe('Error deleting message', e, st);
+      _log.severe('Error deleting message', e, st);
       throw Exception('Error deleting message: $e');
     }
   }
 
   @override
   Future<void> dispose() async {
-    logger.fine('Disposing app conversation repository');
+    _log.fine('Disposing app conversation repository');
     await _conversationNotificationSubscription?.cancel();
     await _messageNotificationSubscription?.cancel();
     _periodicRefresh?.cancel();
