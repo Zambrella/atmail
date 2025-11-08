@@ -99,7 +99,7 @@ class HomeShellRouteData extends ShellRouteData {
   }
 }
 
-class ConversationsRoute extends GoRouteData with _$ConversationsRoute {
+class ConversationsRoute extends GoRouteData with $ConversationsRoute {
   const ConversationsRoute();
 
   @override
@@ -108,7 +108,7 @@ class ConversationsRoute extends GoRouteData with _$ConversationsRoute {
   }
 }
 
-class ConversationDetailsRoute extends GoRouteData with _$ConversationDetailsRoute {
+class ConversationDetailsRoute extends GoRouteData with $ConversationDetailsRoute {
   const ConversationDetailsRoute(this.conversationId);
 
   final String conversationId;
@@ -119,7 +119,7 @@ class ConversationDetailsRoute extends GoRouteData with _$ConversationDetailsRou
   }
 }
 
-class ContactsListRoute extends GoRouteData with _$ContactsListRoute {
+class ContactsListRoute extends GoRouteData with $ContactsListRoute {
   const ContactsListRoute();
 
   @override
@@ -128,7 +128,7 @@ class ContactsListRoute extends GoRouteData with _$ContactsListRoute {
   }
 }
 
-class SettingsRoute extends GoRouteData with _$SettingsRoute {
+class SettingsRoute extends GoRouteData with $SettingsRoute {
   const SettingsRoute();
 
   @override
@@ -141,7 +141,7 @@ class SettingsRoute extends GoRouteData with _$SettingsRoute {
   path: '/onboarding',
   name: 'onboarding',
 )
-class OnboardingRoute extends GoRouteData with _$OnboardingRoute {
+class OnboardingRoute extends GoRouteData with $OnboardingRoute {
   OnboardingRoute();
 
   @override

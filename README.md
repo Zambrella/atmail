@@ -1,19 +1,9 @@
 # atMail
 
-## TODOs:
-- [x] Add leave, archive and delete conversation options to the UI
-- [x] Update keys to be broad -> specific (e.g. `conv.{{conversationId}}.msg.{{messageId}}`)
-- [x] Remove the use of indexes (for now)
-- [ ] Create baseline usable UI
-  - [x] Create theme
-  - [ ] Translations
-- [ ] Add a “priority” field that is both relevant from a UX perspective and notification priority perspective
-
 ## Ideas and future considerations:
-- [ ] Create message and conversation indexes to make fetching conversations more efficient. It can be a background process that the client runs. E.g. for messages, `conv.{{conversationId}}.msgIndex.1` contains the message Ids of the first 100 messages in the conversation with a timestamp for each message. This could then be iterated over to fetch the conversations or the start and end timestamps for regex-ing the messages.
-- [ ] Create an event log for conversations. Everyone can maintain their own copy and it can be used to track changes and updates to conversations.
-- [ ] Use immutable keys (new atsign feature) where possible.
-- [ ] Senders can request read receipts (maybe these could be cryptographically signed)
+- Create message and conversation indexes to make fetching conversations more efficient. It can be a background process that the client runs. E.g. for messages, `conv.{{conversationId}}.msgIndex.1` contains the message Ids of the first 100 messages in the conversation with a timestamp for each message. This could then be iterated over to fetch the conversations or the start and end timestamps for regex-ing the messages.
+- Create an event log for conversations. Everyone can maintain their own copy and it can be used to track changes and updates to conversations.
+- Use immutable keys (new atsign feature) where possible.
 
 ## Outstanding decisions:
 - [ ] Is the fork on change approach going to be transparent to the user? E.g. will the user see a new conversation as started or will it all be part of the same conversation chain?

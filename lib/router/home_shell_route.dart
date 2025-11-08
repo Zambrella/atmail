@@ -112,9 +112,7 @@ class _NavBarState extends State<NavBar> {
           ),
           SizedBox(height: theme.appSpacing.small),
           BlocProvider(
-            create: (context) => AvailableAtsignsCubit(
-              context.read<AuthRepository>(),
-            )..fetchAvailableAtsigns(),
+            create: (context) => AvailableAtsignsCubit()..fetchAvailableAtsigns(),
             child: AtsignSwitcher(),
           ),
           SizedBox(height: theme.appSpacing.medium),
