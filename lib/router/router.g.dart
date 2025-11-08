@@ -15,28 +15,24 @@ RouteBase get $homeShellRouteData => ShellRouteData.$route(
     GoRouteData.$route(
       path: '/mail',
       name: 'mail',
-
-      factory: _$ConversationsRoute._fromState,
+      factory: $ConversationsRoute._fromState,
       routes: [
         GoRouteData.$route(
           path: ':conversationId',
           name: 'conversationDetails',
-
-          factory: _$ConversationDetailsRoute._fromState,
+          factory: $ConversationDetailsRoute._fromState,
         ),
       ],
     ),
     GoRouteData.$route(
       path: '/contacts',
       name: 'contactsList',
-
-      factory: _$ContactsListRoute._fromState,
+      factory: $ContactsListRoute._fromState,
     ),
     GoRouteData.$route(
       path: '/settings',
       name: 'settings',
-
-      factory: _$SettingsRoute._fromState,
+      factory: $SettingsRoute._fromState,
     ),
   ],
 );
@@ -46,7 +42,7 @@ extension $HomeShellRouteDataExtension on HomeShellRouteData {
       const HomeShellRouteData();
 }
 
-mixin _$ConversationsRoute on GoRouteData {
+mixin $ConversationsRoute on GoRouteData {
   static ConversationsRoute _fromState(GoRouterState state) =>
       const ConversationsRoute();
 
@@ -67,7 +63,7 @@ mixin _$ConversationsRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin _$ConversationDetailsRoute on GoRouteData {
+mixin $ConversationDetailsRoute on GoRouteData {
   static ConversationDetailsRoute _fromState(GoRouterState state) =>
       ConversationDetailsRoute(state.pathParameters['conversationId']!);
 
@@ -92,7 +88,7 @@ mixin _$ConversationDetailsRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin _$ContactsListRoute on GoRouteData {
+mixin $ContactsListRoute on GoRouteData {
   static ContactsListRoute _fromState(GoRouterState state) =>
       const ContactsListRoute();
 
@@ -113,7 +109,7 @@ mixin _$ContactsListRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin _$SettingsRoute on GoRouteData {
+mixin $SettingsRoute on GoRouteData {
   static SettingsRoute _fromState(GoRouterState state) => const SettingsRoute();
 
   @override
@@ -136,11 +132,10 @@ mixin _$SettingsRoute on GoRouteData {
 RouteBase get $onboardingRoute => GoRouteData.$route(
   path: '/onboarding',
   name: 'onboarding',
-
-  factory: _$OnboardingRoute._fromState,
+  factory: $OnboardingRoute._fromState,
 );
 
-mixin _$OnboardingRoute on GoRouteData {
+mixin $OnboardingRoute on GoRouteData {
   static OnboardingRoute _fromState(GoRouterState state) => OnboardingRoute();
 
   @override

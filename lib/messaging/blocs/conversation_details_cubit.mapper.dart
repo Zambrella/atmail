@@ -1,5 +1,6 @@
 // coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// dart format off
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, unnecessary_cast, override_on_non_overriding_member
 // ignore_for_file: strict_raw_type, inference_failure_on_untyped_parameter
@@ -13,8 +14,9 @@ class ConversationDetailsStatusMapper
   static ConversationDetailsStatusMapper? _instance;
   static ConversationDetailsStatusMapper ensureInitialized() {
     if (_instance == null) {
-      MapperContainer.globals
-          .use(_instance = ConversationDetailsStatusMapper._());
+      MapperContainer.globals.use(
+        _instance = ConversationDetailsStatusMapper._(),
+      );
     }
     return _instance!;
   }
@@ -67,8 +69,9 @@ class ConversationDetailsStateMapper
   static ConversationDetailsStateMapper? _instance;
   static ConversationDetailsStateMapper ensureInitialized() {
     if (_instance == null) {
-      MapperContainer.globals
-          .use(_instance = ConversationDetailsStateMapper._());
+      MapperContainer.globals.use(
+        _instance = ConversationDetailsStateMapper._(),
+      );
       ConversationDetailsStatusMapper.ensureInitialized();
       AppConversationMapper.ensureInitialized();
     }
@@ -81,14 +84,17 @@ class ConversationDetailsStateMapper
   static ConversationDetailsStatus _$status(ConversationDetailsState v) =>
       v.status;
   static const Field<ConversationDetailsState, ConversationDetailsStatus>
-      _f$status = Field('status', _$status);
+  _f$status = Field('status', _$status);
   static AppConversation? _$conversation(ConversationDetailsState v) =>
       v.conversation;
   static const Field<ConversationDetailsState, AppConversation>
-      _f$conversation = Field('conversation', _$conversation, opt: true);
+  _f$conversation = Field('conversation', _$conversation, opt: true);
   static Exception? _$exception(ConversationDetailsState v) => v.exception;
-  static const Field<ConversationDetailsState, Exception> _f$exception =
-      Field('exception', _$exception, opt: true);
+  static const Field<ConversationDetailsState, Exception> _f$exception = Field(
+    'exception',
+    _$exception,
+    opt: true,
+  );
 
   @override
   final MappableFields<ConversationDetailsState> fields = const {
@@ -99,9 +105,10 @@ class ConversationDetailsStateMapper
 
   static ConversationDetailsState _instantiate(DecodingData data) {
     return ConversationDetailsState(
-        status: data.dec(_f$status),
-        conversation: data.dec(_f$conversation),
-        exception: data.dec(_f$exception));
+      status: data.dec(_f$status),
+      conversation: data.dec(_f$conversation),
+      exception: data.dec(_f$exception),
+    );
   }
 
   @override
@@ -127,49 +134,63 @@ mixin ConversationDetailsStateMappable {
         .encodeMap<ConversationDetailsState>(this as ConversationDetailsState);
   }
 
-  ConversationDetailsStateCopyWith<ConversationDetailsState,
-          ConversationDetailsState, ConversationDetailsState>
-      get copyWith => _ConversationDetailsStateCopyWithImpl<
-              ConversationDetailsState, ConversationDetailsState>(
-          this as ConversationDetailsState, $identity, $identity);
+  ConversationDetailsStateCopyWith<
+    ConversationDetailsState,
+    ConversationDetailsState,
+    ConversationDetailsState
+  >
+  get copyWith =>
+      _ConversationDetailsStateCopyWithImpl<
+        ConversationDetailsState,
+        ConversationDetailsState
+      >(this as ConversationDetailsState, $identity, $identity);
   @override
   String toString() {
-    return ConversationDetailsStateMapper.ensureInitialized()
-        .stringifyValue(this as ConversationDetailsState);
+    return ConversationDetailsStateMapper.ensureInitialized().stringifyValue(
+      this as ConversationDetailsState,
+    );
   }
 
   @override
   bool operator ==(Object other) {
-    return ConversationDetailsStateMapper.ensureInitialized()
-        .equalsValue(this as ConversationDetailsState, other);
+    return ConversationDetailsStateMapper.ensureInitialized().equalsValue(
+      this as ConversationDetailsState,
+      other,
+    );
   }
 
   @override
   int get hashCode {
-    return ConversationDetailsStateMapper.ensureInitialized()
-        .hashValue(this as ConversationDetailsState);
+    return ConversationDetailsStateMapper.ensureInitialized().hashValue(
+      this as ConversationDetailsState,
+    );
   }
 }
 
 extension ConversationDetailsStateValueCopy<$R, $Out>
     on ObjectCopyWith<$R, ConversationDetailsState, $Out> {
   ConversationDetailsStateCopyWith<$R, ConversationDetailsState, $Out>
-      get $asConversationDetailsState => $base.as((v, t, t2) =>
-          _ConversationDetailsStateCopyWithImpl<$R, $Out>(v, t, t2));
+  get $asConversationDetailsState => $base.as(
+    (v, t, t2) => _ConversationDetailsStateCopyWithImpl<$R, $Out>(v, t, t2),
+  );
 }
 
 abstract class ConversationDetailsStateCopyWith<
-    $R,
-    $In extends ConversationDetailsState,
-    $Out> implements ClassCopyWith<$R, $In, $Out> {
+  $R,
+  $In extends ConversationDetailsState,
+  $Out
+>
+    implements ClassCopyWith<$R, $In, $Out> {
   AppConversationCopyWith<$R, AppConversation, AppConversation>?
-      get conversation;
-  $R call(
-      {ConversationDetailsStatus? status,
-      AppConversation? conversation,
-      Exception? exception});
+  get conversation;
+  $R call({
+    ConversationDetailsStatus? status,
+    AppConversation? conversation,
+    Exception? exception,
+  });
   ConversationDetailsStateCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
-      Then<$Out2, $R2> t);
+    Then<$Out2, $R2> t,
+  );
 }
 
 class _ConversationDetailsStateCopyWithImpl<$R, $Out>
@@ -183,26 +204,30 @@ class _ConversationDetailsStateCopyWithImpl<$R, $Out>
       ConversationDetailsStateMapper.ensureInitialized();
   @override
   AppConversationCopyWith<$R, AppConversation, AppConversation>?
-      get conversation =>
-          $value.conversation?.copyWith.$chain((v) => call(conversation: v));
+  get conversation =>
+      $value.conversation?.copyWith.$chain((v) => call(conversation: v));
   @override
-  $R call(
-          {ConversationDetailsStatus? status,
-          Object? conversation = $none,
-          Object? exception = $none}) =>
-      $apply(FieldCopyWithData({
-        if (status != null) #status: status,
-        if (conversation != $none) #conversation: conversation,
-        if (exception != $none) #exception: exception
-      }));
+  $R call({
+    ConversationDetailsStatus? status,
+    Object? conversation = $none,
+    Object? exception = $none,
+  }) => $apply(
+    FieldCopyWithData({
+      if (status != null) #status: status,
+      if (conversation != $none) #conversation: conversation,
+      if (exception != $none) #exception: exception,
+    }),
+  );
   @override
   ConversationDetailsState $make(CopyWithData data) => ConversationDetailsState(
-      status: data.get(#status, or: $value.status),
-      conversation: data.get(#conversation, or: $value.conversation),
-      exception: data.get(#exception, or: $value.exception));
+    status: data.get(#status, or: $value.status),
+    conversation: data.get(#conversation, or: $value.conversation),
+    exception: data.get(#exception, or: $value.exception),
+  );
 
   @override
   ConversationDetailsStateCopyWith<$R2, ConversationDetailsState, $Out2>
-      $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
-          _ConversationDetailsStateCopyWithImpl<$R2, $Out2>($value, $cast, t);
+  $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _ConversationDetailsStateCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
+
