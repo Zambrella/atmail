@@ -1,4 +1,4 @@
-import 'package:atmail/auth/domain/auth_repository.dart';
+import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -18,14 +18,12 @@ class AvailableAtsignsState with AvailableAtsignsStateMappable {
 }
 
 class AvailableAtsignsCubit extends Cubit<AvailableAtsignsState> {
-  AvailableAtsignsCubit(this._authRepository) : super(const AvailableAtsignsState());
-
-  final AuthRepository _authRepository;
+  AvailableAtsignsCubit() : super(const AvailableAtsignsState());
 
   void fetchAvailableAtsigns() async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final atsigns = await _authRepository.getAvailableAtsigns();
+      final atsigns = await KeyChainManager.getInstance().getAtSignListFromKeychain();
       emit(state.copyWith(atsigns: atsigns, isLoading: false, error: null));
     } catch (error) {
       emit(state.copyWith(error: error.toString(), isLoading: false));
