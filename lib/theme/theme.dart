@@ -4,3 +4,4 @@ export 'page_transitions.dart';
 export 'text_scale_factor_clamper.dart';
 export 'theme_cubit.dart';
 export 'theme_extensions.dart';
+export 'widgets/widgets.dart';
