@@ -30,12 +30,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               if (context.mounted) {
                 switch (onboardingResult.status) {
                   case AtOnboardingResultStatus.success:
-                    ConversationsRoute().go(context);
+                    final saveResult = await KeyChainManager.getInstance().makeAtSignPrimary(onboardingResult.atsign!);
+                    if (context.mounted) {
+                      if (saveResult) {
+                        ConversationsRoute().go(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(backgroundColor: Colors.red, content: Text('Failed to save @sign')),
+                        );
+                      }
+                    }
                   case AtOnboardingResultStatus.error:
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(backgroundColor: Colors.red, content: Text('An error has occurred')),
                     );
                   case AtOnboardingResultStatus.cancel:
+                    break;
                 }
               }
             },
