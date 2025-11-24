@@ -9,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:logging/logging.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 class App extends StatefulWidget {
@@ -76,9 +77,13 @@ class AppStartupWidget extends StatefulWidget {
 }
 
 class AppDependencies {
-  const AppDependencies({required this.atClientPreferences});
+  const AppDependencies({
+    required this.atClientPreferences,
+    required this.packageInfo,
+  });
 
   final AtClientPreference atClientPreferences;
+  final PackageInfo packageInfo;
 }
 
 class AppStartupWidgetState extends State<AppStartupWidget> {
@@ -122,8 +127,10 @@ class AppStartupWidgetState extends State<AppStartupWidget> {
       ..hiveStoragePath = dir.path
       ..commitLogPath = dir.path
       ..isLocalStoreRequired = true;
+    final packageInfo = await PackageInfo.fromPlatform();
     final dependencies = AppDependencies(
       atClientPreferences: atClientPreference,
+      packageInfo: packageInfo,
     );
     FlutterNativeSplash.remove();
     logger.fine('Initialization completed');
