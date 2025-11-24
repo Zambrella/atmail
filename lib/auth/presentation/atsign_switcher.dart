@@ -1,5 +1,6 @@
 import 'package:at_onboarding_flutter/at_onboarding_flutter.dart';
 import 'package:atmail/app.dart';
+import 'package:atmail/auth/blocs/atsign_manager_cubit.dart';
 import 'package:atmail/auth/blocs/available_atsigns_cubit.dart';
 import 'package:atmail/router/router.dart';
 import 'package:atmail/theme/theme.dart';
@@ -34,7 +35,8 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
   }
 
   OverlayEntry _createOverlayEntry(Offset offset, Size size) {
-    final cubit = context.read<AvailableAtsignsCubit>();
+    final availableAtsignsCubit = context.read<AvailableAtsignsCubit>();
+    final atSignManagerCubit = context.read<AtSignManagerCubit>();
     final theme = Theme.of(context);
 
     return OverlayEntry(
@@ -61,7 +63,7 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
                   child: Container(
                     constraints: BoxConstraints(maxHeight: 300),
                     child: BlocProvider.value(
-                      value: cubit,
+                      value: availableAtsignsCubit,
                       child: BlocBuilder<AvailableAtsignsCubit, AvailableAtsignsState>(
                         builder: (context, state) {
                           if (state.isLoading) {
@@ -95,7 +97,7 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
                                         title: Text(atsign),
                                         onTap: () {
                                           _hideDropdown();
-                                          _switchToAtSign(atsign);
+                                          atSignManagerCubit.switchAtSign(atsign);
                                         },
                                       );
                                     },
@@ -103,6 +105,14 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
                                 ),
                                 Divider(height: 1),
                               ],
+                              ListTile(
+                                leading: Icon(Icons.add),
+                                title: Text('Add AtSign'),
+                                onTap: () {
+                                  _hideDropdown();
+                                  _addAtsign();
+                                },
+                              ),
                               ListTile(
                                 leading: Icon(Icons.logout),
                                 title: Text('Logout'),
@@ -126,11 +136,29 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
     );
   }
 
-  void _switchToAtSign(String atsign) {
-    // TODO: Implement AtSign switching logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Switching to $atsign (not implemented yet)')),
+  Future<void> _addAtsign() async {
+    AtOnboardingResult onboardingResult = await AtOnboarding.onboard(
+      context: context,
+      config: AtOnboardingConfig(
+        atClientPreference: context.read<AppDependencies>().atClientPreferences,
+        rootEnvironment: RootEnvironment.Production,
+      ),
+      isSwitchingAtsign: true,
     );
+    if (mounted) {
+      switch (onboardingResult.status) {
+        case AtOnboardingResultStatus.success:
+          if (mounted) {
+            context.read<AtSignManagerCubit>().switchAtSign(onboardingResult.atsign!);
+          }
+        case AtOnboardingResultStatus.error:
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(backgroundColor: Colors.red, content: Text('An error has occurred')),
+          );
+        case AtOnboardingResultStatus.cancel:
+          break;
+      }
+    }
   }
 
   void _logout() async {
@@ -144,7 +172,7 @@ class AtsignSwitcherState extends State<AtsignSwitcher> {
       );
       switch (resetResult) {
         case AtOnboardingResetResult.cancelled:
-        // Do nothing
+          break;
         case AtOnboardingResetResult.success:
           if (mounted) {
             OnboardingRoute().go(context);

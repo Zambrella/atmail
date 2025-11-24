@@ -1,8 +1,9 @@
 import 'package:at_client_mobile/at_client_mobile.dart';
+import 'package:atmail/app.dart';
+import 'package:atmail/auth/blocs/atsign_manager_cubit.dart';
 import 'package:atmail/auth/blocs/available_atsigns_cubit.dart';
-import 'package:atmail/auth/domain/auth_repository.dart';
 import 'package:atmail/auth/presentation/atsign_switcher.dart';
-import 'package:atmail/auth/repository/auth_repository.impl.mock.dart';
+import 'package:atmail/messaging/blocs/conversation_bloc.dart';
 import 'package:atmail/messaging/blocs/new_conversation_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation_repository.abs.dart';
 import 'package:atmail/messaging/presentation/new_message_dialog.dart';
@@ -14,57 +15,140 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeShellRoute extends StatelessWidget {
+class HomeShellRoute extends StatefulWidget {
   const HomeShellRoute({required this.child, super.key});
 
   final Widget child;
 
   @override
+  State<HomeShellRoute> createState() => _HomeShellRouteState();
+}
+
+class _HomeShellRouteState extends State<HomeShellRoute> {
+  late final _overlayController = OverlayPortalController();
+
+  void _showLoadingOverlay() {
+    _overlayController.show();
+  }
+
+  void _hideLoadingOverlay() {
+    _overlayController.hide();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return MultiRepositoryProvider(
-      providers: [
-        RepositoryProvider<AppConversationRepository>(
-          create: (context) => AppConversationRepositoryImpl(
-            atClient: AtClientManager.getInstance().atClient,
-            namespace: 'atmail',
-          ),
-        ),
-        RepositoryProvider<AuthRepository>(
-          create: (context) => MockAuthRepositoryImpl(),
-        ),
-      ],
-      child: Builder(
-        builder: (context) {
-          return MultiBlocProvider(
-            providers: [
-              BlocProvider(
-                create: (context) => NewConversationCubit(
-                  context.read<AppConversationRepository>(),
-                ),
+    return OverlayPortal(
+      controller: _overlayController,
+      overlayChildBuilder: (context) {
+        return Material(
+          color: Colors.black54,
+          child: Center(
+            child: Container(
+              padding: EdgeInsets.all(theme.appSpacing.large),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(theme.appSpacing.medium),
               ),
-            ],
-            child: Builder(
-              builder: (context) {
-                return Scaffold(
-                  body: Row(
-                    children: [
-                      if (!FormFactorWidget.of(context).showDrawer)
-                        Container(
-                          width: 250,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                          ),
-                          child: NavBar(),
-                        ),
-                      Expanded(child: child),
-                    ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: theme.appSpacing.medium),
+                  Text(
+                    'Switching atSign...',
+                    style: theme.textTheme.bodyLarge,
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          );
-        },
+          ),
+        );
+      },
+      child: BlocProvider(
+        create: (_) => AtSignManagerCubit(context.read<AppDependencies>().atClientPreferences),
+        child: Builder(
+          builder: (context) {
+            return BlocListener<AtSignManagerCubit, AtSignManagerState>(
+              listener: (context, state) {
+                if (state.isLoading) {
+                  _showLoadingOverlay();
+                } else {
+                  _hideLoadingOverlay();
+                }
+                if (state.error != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.error ?? 'Unknown error'),
+                    ),
+                  );
+                }
+              },
+              child: BlocBuilder<AtSignManagerCubit, AtSignManagerState>(
+                builder: (context, state) {
+                  // This will rebuild whenever currentAtsign changes
+                  final currentAtsign = state.currentAtsign;
+
+                  return MultiRepositoryProvider(
+                    // Use the currentAtsign as the key to force complete recreation
+                    key: ValueKey(currentAtsign),
+                    providers: [
+                      RepositoryProvider<AppConversationRepository>(
+                        create: (context) => AppConversationRepositoryImpl(
+                          atClient: AtClientManager.getInstance().atClient,
+                          namespace: context.read<AppDependencies>().atClientPreferences.namespace!,
+                        ),
+                      ),
+                    ],
+                    child: Builder(
+                      builder: (context) {
+                        return MultiBlocProvider(
+                          providers: [
+                            BlocProvider(
+                              create: (context) => NewConversationCubit(
+                                context.read<AppConversationRepository>(),
+                              ),
+                            ),
+                            BlocProvider(
+                              create: (context) => ConversationCubit(
+                                context.read<AppConversationRepository>(),
+                              ),
+                            ),
+                          ],
+                          child: Builder(
+                            builder: (context) {
+                              return Scaffold(
+                                body: Row(
+                                  children: [
+                                    if (!FormFactorWidget.of(context).showDrawer)
+                                      Container(
+                                        width: 250,
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                        child: NavBar(),
+                                      ),
+                                    // Key the child with currentAtsign to force rebuild when atSign changes
+                                    Expanded(
+                                      child: KeyedSubtree(
+                                        key: ValueKey(currentAtsign),
+                                        child: widget.child,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+        ),
       ),
     );
   }
