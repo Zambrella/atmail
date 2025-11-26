@@ -2,9 +2,10 @@ import 'package:at_client_mobile/at_client_mobile.dart';
 import 'package:atmail/messaging/blocs/archive_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/delete_conversation_cubit.dart';
 import 'package:atmail/messaging/blocs/leave_conversation_cubit.dart';
-import 'package:atmail/messaging/blocs/new_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_conversation.dart';
 import 'package:atmail/messaging/presentation/message_card.dart';
+import 'package:atmail/messaging/presentation/message_input_field.dart';
+import 'package:atmail/theme/theme_extensions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -20,8 +21,6 @@ class LoadedConversation extends StatefulWidget {
 
 class LoadedConversationState extends State<LoadedConversation> {
   late AppConversation conversation;
-  final TextEditingController _messageController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -34,20 +33,6 @@ class LoadedConversationState extends State<LoadedConversation> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.conversation != widget.conversation) {
       conversation = widget.conversation;
-    }
-  }
-
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
-  }
-
-  void _submitMessage() {
-    if (_formKey.currentState?.validate() ?? false) {
-      final messageText = _messageController.text.trim();
-      context.read<NewMessageCubit>().addMessage(messageText);
-      _messageController.clear();
     }
   }
 
@@ -145,7 +130,10 @@ class LoadedConversationState extends State<LoadedConversation> {
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(Theme.of(context).appSpacing.medium),
+              constraints: BoxConstraints(
+                maxHeight: 500,
+              ),
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
@@ -154,43 +142,7 @@ class LoadedConversationState extends State<LoadedConversation> {
                   ),
                 ),
               ),
-              child: conversation.hasLeft
-                  ? Text('Conversation left')
-                  : Form(
-                      key: _formKey,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _messageController,
-                              maxLines: 5,
-                              minLines: 1,
-                              textInputAction: TextInputAction.newline,
-                              decoration: const InputDecoration(
-                                hintText: 'Type your message...',
-                                border: OutlineInputBorder(),
-                              ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Please enter a message';
-                                }
-                                if (value.trim().length > 1000) {
-                                  return 'Message is too long (max 1000 characters)';
-                                }
-                                return null;
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 8.0),
-                          IconButton(
-                            onPressed: _submitMessage,
-                            icon: const Icon(Icons.send),
-                            tooltip: 'Send message',
-                          ),
-                        ],
-                      ),
-                    ),
+              child: conversation.hasLeft ? Text('Conversation left') : MessageInputField(),
             ),
             SizedBox(height: MediaQuery.of(context).padding.bottom),
           ],

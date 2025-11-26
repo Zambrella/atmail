@@ -23,4 +23,10 @@ class NewMessageCubit extends Cubit<NewMessageState> {
     final content = TextContent(message);
     unawaited(_conversationRepository.sendMessage(conversationId: conversationId, content: content));
   }
+
+  void addMarkdownMessage(String markdown) {
+    // TODO: Parse the markdown and extract the features that are being used.
+    final content = MarkdownContent(markdown);
+    unawaited(_conversationRepository.sendMessage(conversationId: conversationId, content: content));
+  }
 }

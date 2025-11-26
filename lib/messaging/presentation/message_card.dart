@@ -1,6 +1,7 @@
 import 'package:atmail/messaging/blocs/delete_message_cubit.dart';
 import 'package:atmail/messaging/domain/app_message.dart';
 import 'package:atmail/messaging/domain/message_content.dart';
+import 'package:atmail/messaging/presentation/display_markdown.dart';
 import 'package:atmail/messaging/presentation/message_context_dialog.dart';
 import 'package:atmail/messaging/presentation/message_status_icon.dart';
 import 'package:atmail/theme/theme.dart';
@@ -101,7 +102,7 @@ class _MessageCardState extends State<MessageCard> {
                   Flexible(
                     child: switch (widget.message.content) {
                       TextContent(:final text) => Text(text),
-                      MarkdownContent() => throw UnimplementedError(),
+                      MarkdownContent(text: final markdown) => DisplayMarkdown(data: markdown),
                       BinaryContent() => throw UnimplementedError(),
                       DeletedContent() => Text('Message deleted'),
                     },
